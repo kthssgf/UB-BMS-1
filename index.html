@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ujian Blok Basic Medical Science - Kuis Interaktif (100 Soal)</title>
+<style>
+:root{--p:#2e3190;--bg:#f4f5fb;--card:#ffffff;--tx:#1d1d2b;--ok:#1e8e3e;--bad:#c5221f;--line:#9996}
+@media (prefers-color-scheme: dark){:root{--bg:#15161f;--card:#1f2030;--tx:#e8e8f2;--p:#8c91ff;--ok:#5fd27c;--bad:#ff7b72}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx);line-height:1.5}
+.wrap{max-width:820px;margin:0 auto;padding:16px}
+.card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+h1{font-size:20px;margin:0 0 6px}
+h2{font-size:17px;margin:0 0 8px}
+button{font:inherit;padding:10px 16px;border-radius:8px;border:1px solid var(--p);background:var(--p);color:#fff;cursor:pointer}
+button.sec{background:transparent;color:var(--p)}
+button:disabled{opacity:.4;cursor:default}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;background:transparent;color:var(--tx);border:1px solid var(--line);padding:12px}
+.opt.sel{border:2px solid var(--p);background:rgba(46,49,144,.12)}
+.opt.ok{border:2px solid var(--ok)}
+.opt.bad{border:2px solid var(--bad)}
+.exp{font-size:14px;margin:4px 0 10px 0;padding:6px 10px;border-left:3px solid var(--line)}
+.nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin-top:10px}
+.nav button{padding:6px 0;font-size:13px;background:transparent;color:var(--tx);border:1px solid var(--line)}
+.nav button.done{background:rgba(46,49,144,.25)}
+.nav button.cur{border:2px solid var(--p)}
+.nav button.right{background:var(--ok);color:#fff;border-color:var(--ok)}
+.nav button.wrong{background:var(--bad);color:#fff;border-color:var(--bad)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#timer{font-weight:700;font-size:18px;color:var(--p)}
+.meta{font-size:12px;opacity:.75}
+.row{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:12px}
+.hid{display:none!important}
+ul.plain{padding-left:18px;margin:6px 0}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- START -->
+<div id="start" class="card">
+  <h1>UJIAN BLOK BASIC MEDICAL SCIENCE</h1>
+  <p class="meta">Kuis interaktif, 100 soal sesuai blueprint. Soal dan pilihan jawaban diacak setiap kali Anda memulai.</p>
+  <ul class="plain">
+    <li>Jumlah soal: <b id="nSoal"></b> (C1–C2: <b id="nC12"></b>, C3–C4: <b id="nC34"></b>)</li>
+    <li>Waktu: <b id="nWaktu"></b> menit</li>
+    <li>Setiap soal memiliki 5 pilihan (A–E). Kunci jawaban dan pembahasan setiap pilihan langsung ditampilkan setelah Anda memilih jawaban.</li>
+  </ul>
+  <div class="row"><span></span><button id="btnStart">Mulai Ujian</button></div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="hid">
+  <div class="card bar">
+    <div class="meta" id="progress"></div>
+    <div id="timer">--:--</div>
+  </div>
+  <div class="card">
+    <div class="meta" id="qmeta" style="margin-bottom:6px"></div>
+    <h2 id="qtext"></h2>
+    <div id="opts"></div>
+    <div class="row">
+      <button class="sec" id="btnPrev">&larr; Sebelumnya</button>
+      <button class="sec" id="btnNext">Berikutnya &rarr;</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="bar">
+      <span class="meta">Navigasi soal</span>
+      <button id="btnSubmit">Selesai &amp; Lihat Hasil</button>
+    </div>
+    <div class="nav" id="nav"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="hid"></div>
+
+</div>
+
+<script>
+/* ===== BANK SOAL (100 soal) =====
+   Format tiap soal: {t: topik, l: level, q: soal, o: [[teks, benar?, penjelasan], ... 5 pilihan]}
+*/
+const BK0 = [
+{t:"Konsep Sehat-Sakit",l:"C1-C2",q:"Menurut definisi WHO (1948), sehat dinyatakan sebagai...",o:[
+ ["Tidak adanya penyakit atau kelemahan dalam tubuh",false,"Ini pandangan klasik (absence of disease). Pandangan ini dinilai terlalu simplistis dan mengabaikan aspek mental dan sosial, sehingga WHO memperluas definisinya."],
+ ["Keadaan sejahtera fisik, mental, dan sosial yang utuh, bukan hanya bebas dari penyakit atau kelemahan",true,"Ini definisi WHO 1948. Kata kuncinya: fisik, mental, sosial, dan 'bukan hanya' bebas dari penyakit."],
+ ["Kemampuan individu menjalankan peran sosial yang diakui masyarakat",false,"Peran sosial yang diakui masyarakat adalah definisi sickness, bukan definisi sehat menurut WHO."],
+ ["Patologi organik yang terukur tidak ditemukan pada pemeriksaan",false,"Patologi organik yang terukur adalah makna disease. Definisi sehat tidak dibatasi pada pemeriksaan patologis."],
+ ["Sejahtera spiritual yang berdiri sendiri, terlepas dari aspek fisik",false,"Spiritual belum tercakup dalam definisi WHO 1948, tetapi definisi itu tidak memisahkan spiritual dari fisik."]
+]},
+{t:"Konsep Sehat-Sakit",l:"C1-C2",q:"Istilah sakit yang menggambarkan pengalaman subjektif individu terhadap sakitnya disebut...",o:[
+ ["Disease",false,"Disease adalah patologi organik atau biologis yang terukur, bukan pengalaman subjektif."],
+ ["Illness",true,"Illness adalah pengalaman subjektif individu terhadap sakit."],
+ ["Sickness",false,"Sickness adalah peran sosial yang diakui masyarakat."],
+ ["Impairment",false,"Impairment bukan istilah sakit yang lazim dalam kerangka disease, illness, dan sickness."],
+ ["Syndrome",false,"Syndrome adalah kumpulan gejala, bukan istilah untuk pengalaman subjektif individu."]
+]},
+{t:"Konsep Sehat-Sakit",l:"C3-C4",q:"Seorang pasien DM tipe 2 mengeluh cemas, sulit membayar obat, dan merasa hidupnya kehilangan makna sejak didiagnosis. Dokter keluarga ingin menggali 'makna sakit' dan 'koping religius' pasien. Dimensi yang paling tepat untuk aspek tersebut adalah...",o:[
+ ["Biologis",false,"Kontrol gula darah dan komplikasi termasuk dimensi biologis. Makna sakit dan koping religius bukan bagian di sana."],
+ ["Psikologis",false,"Dimensi psikologis mencakup depresi, kecemasan, dan kualitas hidup. Makna sakit dan koping religius termasuk dimensi spiritual."],
+ ["Sosial",false,"Biaya pengobatan termasuk dimensi sosial, tetapi yang digali dokter adalah makna sakit dan koping religius."],
+ ["Spiritual",true,"Pendekatan holistik pasien DM tipe 2 mencakup dimensi spiritual, yaitu makna sakit dan koping religius."],
+ ["Lingkungan fisik",false,"Air bersih dan sanitasi termasuk determinan lingkungan fisik menurut WHO, tidak berkaitan dengan makna sakit."]
+]},
+{t:"Histologi Tulang Rawan",l:"C1-C2",q:"Serat kolagen yang dominan pada kartilago hialin adalah tipe...",o:[
+ ["I",false,"Kolagen tipe I dominan pada kulit, tendon, tulang, dan dentin, bukan kartilago hialin."],
+ ["II",true,"Kartilago hialin mengandung serat kolagen tipe II."],
+ ["III",false,"Kolagen tipe III membentuk serat retikular, bukan dominan pada kartilago hialin."],
+ ["IX",false,"Kolagen tipe IX berperan sebagai linking/anchoring collagen, bukan kolagen dominan kartilago."],
+ ["XI",false,"Kolagen tipe XI membantu fungsi tipe II, tetapi bukan kolagen dominan kartilago hialin."]
+]},
+{t:"Histologi Tulang Rawan",l:"C1-C2",q:"Jenis kartilago yang mengandung serat elastis bercabang dan terdapat di epiglotis adalah kartilago...",o:[
+ ["Hialin",false,"Kartilago hialin mengandung kolagen tipe II, tidak ditandai serat elastis bercabang. Lokasinya di sistem respirasi dan permukaan sendi."],
+ ["Elastis",true,"Kartilago elastis memiliki banyak serat elastis bercabang. Lokasinya di telinga luar, tuba auditiva, dan epiglotis."],
+ ["Fibrosa",false,"Kartilago fibrosa ditandai serat kolagen tipe I yang kasar dan padat, dengan lokasi di diskus intervertebralis dan simfisis pubis."],
+ ["Retikular",false,"Jaringan retikular adalah jaringan ikat khusus dengan serat retikular tipe III, bukan kartilago."],
+ ["Mukoid",false,"Jaringan mukoid adalah jaringan ikat embrional, bukan kartilago."]
+]},
+{t:"Histologi Tulang Rawan",l:"C1-C2",q:"Jenis kartilago yang tidak memiliki perikondrium adalah kartilago...",o:[
+ ["Fibrosa",true,"Kartilago fibrosa tidak memiliki perikondrium. Kartilago hialin dan elastis umumnya memilikinya, kecuali hialin di epifisis dan permukaan sendi."],
+ ["Elastis",false,"Kartilago elastis memiliki perikondrium."],
+ ["Hialin pada trakea",false,"Kartilago hialin umumnya memiliki perikondrium, termasuk pada trakea."],
+ ["Hialin pada kostal",false,"Kartilago kostal (iga) adalah hialin dan memiliki perikondrium."],
+ ["Elastis pada epiglotis",false,"Epiglotis adalah kartilago elastis yang memiliki perikondrium."]
+]},
+{t:"Histologi Tulang Rawan",l:"C3-C4",q:"Pada pasien dengan kerusakan kartilago permukaan sendi (kartilago hialin), perbaikan berjalan sangat lambat dan sering tidak sempurna. Alasan utama yang paling tepat adalah...",o:[
+ ["Kartilago bersifat avaskuler dan memiliki laju metabolisme rendah",true,"Perbaikan kartilago lambat dan tidak efektif, sebagian karena kartilago avaskuler dan memiliki laju metabolisme rendah."],
+ ["Kartilago mengandung banyak pembuluh darah sehingga mudah terjadi kerusakan ulang",false,"Kartilago justru avaskuler. Nutrisinya masuk melalui difusi."],
+ ["Kondrosit dewasa membelah sangat cepat sehingga matriks tidak sempat terbentuk",false,"Regenerasi kartilago sukar pada dewasa karena kondrosit tidak membelah aktif, bukan karena membelah terlalu cepat."],
+ ["Perikondrium selalu membentuk kartilago baru dengan kualitas sempurna pada setiap kerusakan",false,"Pada kerusakan luas, perikondrium membentuk jaringan parut padat, bukan kartilago baru."],
+ ["Tidak terdapat sel kondrogenik pada tubuh dewasa",false,"Lapisan dalam perikondrium mengandung sel kondrogenik yang berkembang menjadi kondroblas."]
+]},
+{t:"Histologi Tulang Rawan",l:"C3-C4",q:"Pada seorang anak, lapisan kartilago baru terbentuk di permukaan tulang rawan yang sudah ada, berasal dari diferensiasi sel-sel lapisan dalam perikondrium. Jenis pertumbuhan yang terjadi adalah...",o:[
+ ["Interstisial",false,"Pertumbuhan interstisial terjadi akibat pembelahan kondrosit yang sudah ada di dalam matriks, bukan dari perikondrium."],
+ ["Aposisional",true,"Pertumbuhan aposisional terjadi akibat diferensiasi sel perikondrium bagian dalam yang mengendapkan selapis kartilago baru di permukaan."],
+ ["Endokondral",false,"Osifikasi endokondral adalah penggantian kartilago oleh tulang, bukan penambahan lapisan kartilago dari perikondrium."],
+ ["Regenerasi total oleh jaringan fibrosa",false,"Pada kerusakan luas, perikondrium membentuk jaringan parut fibrosa, bukan lapisan kartilago yang menambah tebal tulang rawan."],
+ ["Intususepsi",false,"Intususepsi bukan mekanisme pertumbuhan tulang rawan yang dibahas dalam kerangka ini."]
+]},
+{t:"Histologi Jaringan Ikat",l:"C1-C2",q:"Sel yang paling banyak ditemukan pada jaringan ikat dan bertugas memproduksi serta memelihara sebagian besar komponen ekstraseluler adalah...",o:[
+ ["Fibroblas",true,"Fibroblas adalah sel paling umum pada jaringan ikat dan memproduksi serta memelihara sebagian besar komponen ekstraseluler."],
+ ["Makrofag",false,"Makrofag berfungsi fagositosis debris dan presentasi antigen, bukan sumber utama komponen ekstraseluler."],
+ ["Sel plasma",false,"Sel plasma menghasilkan antibodi."],
+ ["Mastosit",false,"Mastosit menyimpan granul heparin dan histamin serta berperan dalam reaksi alergi."],
+ ["Adiposit",false,"Adiposit berfungsi menyimpan lipid netral."]
+]},
+{t:"Histologi Jaringan Ikat",l:"C1-C2",q:"Kolagen tipe apa yang paling melimpah dan membentuk serat kolagen besar yang bersifat eosinofilik pada kulit, tendon, dan tulang?",o:[
+ ["Tipe I",true,"Kolagen tipe I adalah kolagen paling melimpah dan tersebar luas, membentuk bundel besar yang disebut serat kolagen."],
+ ["Tipe II",false,"Kolagen tipe II terdapat pada kartilago dan badan vitreus."],
+ ["Tipe III",false,"Kolagen tipe III membentuk serat retikular yang halus, bukan bundel besar."],
+ ["Tipe IV",false,"Kolagen tipe IV membentuk lembaran (sheet) pada lamina basal."],
+ ["Tipe IX",false,"Kolagen tipe IX berperan sebagai linking/anchoring collagen pada kartilago."]
+]},
+{t:"Histologi Jaringan Ikat",l:"C1-C2",q:"Serat retikular paling tepat diperlihatkan menggunakan pewarnaan...",o:[
+ ["Hematoksilin-eosin (H&E)",false,"Pada H&E serat retikular umumnya tidak terlihat jelas. Serat ini memerlukan pewarnaan khusus."],
+ ["Perak (silver)",true,"Serat retikular bersifat argyrofilik. Pada pewarnaan perak tampak sebagai benang hitam halus."],
+ ["Resorcin fuchsin",false,"Resorcin fuchsin digunakan untuk serat elastis."],
+ ["Sudan III",false,"Sudan III digunakan untuk melihat lipid, bukan serat retikular."],
+ ["Trikrom",false,"Trikrom menonjolkan kolagen dengan warna biru, bukan metode utama untuk serat retikular."]
+]},
+{t:"Histologi Jaringan Ikat",l:"C3-C4",q:"Seorang mahasiswa mengamati sel jaringan lemak dengan sitoplasma yang berisi banyak mitokondria dan tetesan lipid kecil, serta inti sferis di tengah. Fungsi utama jaringan tersebut paling tepat adalah...",o:[
+ ["Menyimpan lipid netral sebagai cadangan energi jangka panjang",false,"Fungsi tersebut sesuai adiposit putih (unilokular) dengan satu tetesan lipid besar, bukan ciri yang diamati."],
+ ["Menghasilkan antibodi untuk imunitas humoral",false,"Antibodi dihasilkan oleh sel plasma, bukan adiposit."],
+ ["Memproduksi panas (termogenesis)",true,"Adiposit cokelat (multilokular) memiliki banyak mitokondria dan tetesan lipid kecil serta inti sentral. Fungsi utamanya produksi panas."],
+ ["Melepaskan heparin dan histamin saat reaksi alergi",false,"Heparin dan histamin dilepaskan oleh mastosit, yang memiliki granul basofilik."],
+ ["Fagositosis debris sel dan presentasi antigen",false,"Fungsi tersebut dimiliki makrofag."]
+]},
+{t:"Histologi Jaringan Ikat",l:"C3-C4",q:"Pada luka kulit, sekelompok sel fibrosit yang semula tidak aktif berubah menjadi sel aktif dengan banyak organel untuk sintesis protein, lalu menghasilkan kolagen berlebihan (keloid). Sel aktif tersebut disebut...",o:[
+ ["Fibroblas",true,"Fibrosit (sel istirahat dengan sedikit organel) berubah menjadi fibroblas (sel aktif) bila distimulasi, misalnya saat kerusakan jaringan. Fibroblas aktif mensintesis kolagen."],
+ ["Sel mesenkim",false,"Sel mesenkim adalah sel tak berdiferensiasi, bukan sel aktif hasil transformasi fibrosit."],
+ ["Makrofag",false,"Makrofag adalah sel fagositik dan tidak merupakan hasil transformasi fibrosit."],
+ ["Fibrosit",false,"Fibrosit adalah sel istirahat, sehingga tidak sesuai dengan deskripsi sel yang aktif."],
+ ["Adiposit",false,"Adiposit menyimpan lipid dan tidak merupakan bentuk aktif dari fibrosit."]
+]}
+];
+const BK1 = [
+{t:"Fisiologi Sel",l:"C1-C2",q:"Komponen terbesar dari massa sel (70–80%) adalah...",o:[
+ ["Protein",false,"Protein hanya menyusun sekitar 10–20% massa sel, jadi bukan komponen terbesar."],
+ ["Air",true,"Air adalah medium cair utama sel dan menyusun 70–80% massa sel."],
+ ["Lipid",false,"Lipid (terutama fosfolipid dan kolesterol) hanya sekitar 2% massa sel."],
+ ["Karbohidrat",false,"Karbohidrat hanya sekitar 1% massa sel, berperan sebagai nutrisi sel."],
+ ["Ion",false,"Ion seperti kalium, natrium, dan klorida merupakan komponen kecil protoplasma."]
+]},
+{t:"Fisiologi Sel",l:"C1-C2",q:"Organel yang dibentuk di kompleks golgi, mengandung ±60 jenis enzim hidrolitik, dan berfungsi mencerna substansi serta organel tua (autofagi) adalah...",o:[
+ ["Peroksisom",false,"Peroksisom mengandung oksidase dan katalase untuk mengolah H2O2, bukan enzim digestif untuk autofagi."],
+ ["Proteasom",false,"Proteasom mencerna protein yang rusak atau tidak diperlukan, bukan organel secara keseluruhan."],
+ ["Mitokondria",false,"Mitokondria membentuk ATP melalui respirasi aerobik, bukan organel pencerna."],
+ ["Lisosom",true,"Lisosom dibentuk di kompleks golgi, memiliki ±60 enzim digestif, dan berperan dalam autofagi."],
+ ["Ribosom",false,"Ribosom berfungsi sintesis protein, bukan pencernaan."]
+]},
+{t:"Fisiologi Sel",l:"C1-C2",q:"Enzim peroksisom yang berfungsi mendekomposisi H2O2 menjadi zat yang tidak toksik adalah...",o:[
+ ["Oksidase",false,"Oksidase justru menghasilkan H2O2 sebagai produk samping saat mengoksidasi substansi organik."],
+ ["Katalase",true,"Katalase mendekomposisi H2O2 sehingga melindungi bagian sel lain dari efek toksiknya."],
+ ["Protease",false,"Protease bekerja di proteasom untuk mencerna protein, bukan untuk mendekomposisi H2O2."],
+ ["Lipase",false,"Lipase bukan enzim peroksisom yang berperan dalam dekomposisi H2O2."],
+ ["Polimerase",false,"Polimerase berperan dalam sintesis asam nukleat, bukan enzim peroksisom."]
+]},
+{t:"Fisiologi Sel",l:"C3-C4",q:"Seorang pasien mengonsumsi obat yang harus dimetabolisme dan didetoksifikasi di sel hati. Pada waktu bersamaan, sel otot yang berkontraksi memerlukan pelepasan Ca2+ dari penyimpanannya. Organel yang paling tepat berperan pada kedua proses tersebut adalah...",o:[
+ ["Retikulum endoplasma kasar",false,"RE kasar berfungsi memodifikasi dan mentranspor protein baru, bukan detoksifikasi atau penyimpanan Ca2+."],
+ ["Retikulum endoplasma halus",true,"RE halus berperan dalam detoksifikasi obat dan pestisida, serta menyimpan dan melepaskan Ca2+ yang memicu kontraksi sel otot."],
+ ["Kompleks golgi",false,"Kompleks golgi memodifikasi, mengemas, dan mentranspor protein, bukan detoksifikasi."],
+ ["Peroksisom",false,"Peroksisom mengolah H2O2 melalui oksidase dan katalase, tidak berperan dalam penyimpanan Ca2+."],
+ ["Nukleolus",false,"Nukleolus memproduksi ribosom dan rRNA, bukan detoksifikasi."]
+]},
+{t:"Fisiologi Sel",l:"C3-C4",q:"Suatu racun menghambat pompa Na+/K+ ATPase pada membran sel. Dampak yang paling tepat terhadap sel adalah...",o:[
+ ["Konsentrasi Na+ intrasel menurun dan sel menjadi lebih cepat membelah",false,"Pompa Na+/K+ ATPase menjaga konsentrasi Na+ rendah di sitosol. Bila dihambat, Na+ justru menumpuk di dalam sel."],
+ ["Gradien Na+ dan K+ terganggu sehingga volume sel dan kemampuan membangkitkan potensial aksi terganggu",true,"Pompa Na-K menjaga volume normal sel dan kemampuan sel membangkitkan sinyal listrik. Penghambatannya mengganggu keduanya."],
+ ["Transport glukosa melalui difusi sederhana meningkat",false,"Difusi sederhana tidak bergantung pada pompa Na+/K+. Glukosa diangkut melalui carrier, bukan difusi sederhana."],
+ ["Sel tidak terpengaruh karena pompa Na-K hanya berperan pada sel saraf",false,"Pompa Na-K merupakan jenis pompa yang paling banyak dan berperan di hampir semua sel, bukan hanya sel saraf."],
+ ["Aquaporin menjadi tidak diperlukan lagi untuk perpindahan air",false,"Aquaporin adalah kanal air pada osmosis. Hambatan pompa Na+/K+ tidak menghapus kebutuhan aquaporin."]
+]},
+{t:"Fisiologi Sel",l:"C3-C4",q:"Glukosa diangkut ke dalam sel melalui difusi terfasilitasi oleh carrier. Ketika konsentrasi glukosa di luar sel dinaikkan terus, laju transport akhirnya tidak lagi meningkat. Penjelasan yang paling tepat adalah...",o:[
+ ["Membran plasma menjadi impermeabel terhadap glukosa",false,"Glukosa tetap dapat melewati membran melalui carrier, sehingga membran tidak menjadi impermeabel."],
+ ["Jumlah carrier yang tersedia telah mencapai batas maksimum (transport maksimum)",true,"Transport maksimum adalah batas jumlah carrier yang dapat digunakan. Setelah batas tercapai, kecepatan difusi tidak bertambah lagi."],
+ ["Glukosa berubah menjadi ion sehingga tidak dapat diangkut",false,"Glukosa tidak berubah menjadi ion. Glukosa termasuk zat yang diangkut melalui carrier."],
+ ["Difusi terfasilitasi berubah menjadi transport aktif primer",false,"Difusi terfasilitasi tetap pasif. Transport aktif primer membutuhkan hidrolisis ATP, yang tidak terlibat dalam kasus ini."],
+ ["Gradien konsentrasi di dua sisi membran menjadi terbalik",false,"Kecepatan transport bergantung pada selisih gradien. Kenaikan glukosa di luar sel tidak membalik gradien."]
+]},
+
+{t:"Fisiologi Homeostasis",l:"C1-C2",q:"Istilah homeostasis pertama kali dikenalkan oleh...",o:[
+ ["Louis Pasteur",false,"Louis Pasteur dikenal dari penelitian mikroorganisme, bukan sebagai pengenal istilah homeostasis."],
+ ["Walter Cannon",true,"Istilah homeostasis dikenalkan oleh Walter Cannon untuk menggambarkan keadaan stabil dinamis lingkungan internal tubuh."],
+ ["Robert Koch",false,"Robert Koch dikenal dari penemuan kuman penyebab penyakit, bukan sebagai pengenal istilah homeostasis."],
+ ["George Engel",false,"George Engel dikenal sebagai pencetus model biopsikososial, bukan pengenal istilah homeostasis."],
+ ["HL Blum",false,"HL Blum dikenal dari model ekologis kesehatan, bukan pengenal istilah homeostasis."]
+]},
+{t:"Fisiologi Homeostasis",l:"C1-C2",q:"Manakah yang BUKAN termasuk unsur yang dipertahankan konstan dalam homeostasis?",o:[
+ ["Suhu",false,"Suhu termasuk tujuh unsur yang dipertahankan konstan dalam homeostasis."],
+ ["pH",false,"pH termasuk tujuh unsur yang dipertahankan konstan dalam homeostasis."],
+ ["Konsentrasi O2 dan CO2",false,"Konsentrasi O2 dan CO2 termasuk tujuh unsur yang dipertahankan konstan."],
+ ["Jumlah kromosom dalam nukleus",true,"Jumlah kromosom bukan unsur lingkungan internal. Tujuh unsur yang dipertahankan konstan adalah zat gizi, O2 dan CO2, zat sisa, pH, air-garam-elektrolit, suhu, serta volume dan tekanan."],
+ ["Volume dan tekanan",false,"Volume dan tekanan termasuk tujuh unsur yang dipertahankan konstan."]
+]},
+{t:"Fisiologi Homeostasis",l:"C1-C2",q:"Mekanisme kontrol homeostasis yang bekerja dengan cara melawan perubahan variabel terkontrol sehingga kondisi tetap stabil disebut...",o:[
+ ["Feedback positif",false,"Feedback positif memperkuat perubahan, misalnya pada koagulasi dan kontraksi uterus, bukan melawannya."],
+ ["Feedback negatif",true,"Feedback negatif adalah respons yang melawan perubahan pada variabel terkontrol, sehingga tercapai kestabilan."],
+ ["Feedforward",false,"Feedforward adalah respons antisipasi terhadap perubahan, bukan respons setelah perubahan terdeteksi."],
+ ["Kontrol intrinsik",false,"Kontrol intrinsik adalah mekanisme yang terjadi di dalam organ itu sendiri, bukan jenis feedback."],
+ ["Kontrol ekstrinsik",false,"Kontrol ekstrinsik adalah mekanisme yang dicetuskan dari luar organ oleh saraf dan hormon, bukan jenis feedback."]
+]},
+{t:"Fisiologi Homeostasis",l:"C3-C4",q:"Tekanan darah seorang pasien berada di atas normal. Baroreseptor sinus karotikus dan lengkung aorta mendeteksi perubahan tersebut. Respons yang tepat dari pusat kontrol kardiovaskuler adalah meningkatkan aktivitas parasimpatis dan menurunkan simpatis, sehingga denyut jantung dan curah jantung turun dan arteriol berdilatasi. Mekanisme ini merupakan contoh...",o:[
+ ["Feedback positif",false,"Feedback positif memperkuat perubahan. Pada kasus ini respons justru menurunkan tekanan darah kembali ke normal."],
+ ["Feedback negatif",true,"Perubahan tekanan darah dilawan oleh respons yang menurunkannya kembali ke normal, sehingga kestabilan tercapai."],
+ ["Feedforward",false,"Feedforward adalah antisipasi sebelum perubahan terjadi. Pada kasus ini perubahan sudah terdeteksi oleh baroreseptor."],
+ ["Kontrol intrinsik murni",false,"Respons ini melibatkan saraf dan pusat kontrol kardiovaskuler dari luar organ, sehingga termasuk kontrol ekstrinsik dan feedback negatif."],
+ ["Termolisis",false,"Termolisis adalah mekanisme pelepasan panas untuk mengatur suhu tubuh, tidak berkaitan dengan tekanan darah."]
+]},
+{t:"Fisiologi Homeostasis",l:"C3-C4",q:"Pada persalinan, oksitosin menyebabkan kontraksi uterus yang mendorong bayi ke serviks. Kontraksi ini kemudian memicu pelepasan oksitosin lebih banyak, sehingga proses terus berlanjut hingga bayi lahir. Mekanisme kontrol tersebut merupakan contoh...",o:[
+ ["Feedback negatif",false,"Feedback negatif melawan perubahan dan mengembalikan kestabilan. Pada persalinan perubahan justru diperkuat."],
+ ["Feedback positif",true,"Oksitosin menyebabkan kontraksi uterus yang mendorong bayi ke serviks, dan perubahan ini memperkuat pelepasan oksitosin. Ini adalah contoh feedback positif."],
+ ["Feedforward",false,"Feedforward adalah respons antisipasi, bukan siklus penguatan seperti pada kasus ini."],
+ ["Kontrol intrinsik",false,"Kontrol intrinsik adalah mekanisme dalam organ tanpa peran saraf atau hormon dari luar. Pada kasus ini oksitosin bekerja sebagai hormon."],
+ ["Kontrol termogenik",false,"Termogenesis adalah pembentukan panas untuk menjaga suhu, tidak berkaitan dengan persalinan."]
+]},
+{t:"Fisiologi Homeostasis",l:"C3-C4",q:"Saat otot bekerja, O2 di jaringan otot menurun dan pembuluh darah di otot tersebut melebar (vasodilatasi), sehingga perfusi meningkat dan O2 lebih banyak dibawa ke otot. Mekanisme ini termasuk dalam kategori...",o:[
+ ["Kontrol ekstrinsik oleh hormon adrenalin",false,"Pada kasus ini tidak ada peran hormon atau saraf dari luar organ. Perubahan terjadi langsung di dalam otot."],
+ ["Kontrol intrinsik dalam organ",true,"Kontrol intrinsik adalah mekanisme dalam organ. Pada kasus ini O2 otot menurun akibat kerja otot, lalu vasodilatasi meningkatkan perfusi."],
+ ["Feedforward",false,"Respons terjadi setelah perubahan O2 terdeteksi, bukan sebagai antisipasi. Karena itu bukan feedforward."],
+ ["Feedback positif",false,"Vasodilatasi di sini melawan penurunan O2 dan mengembalikan keseimbangan, bukan memperkuat perubahan."],
+ ["Termolisis",false,"Termolisis berkaitan dengan pengaturan suhu tubuh, bukan suplai O2 ke otot."]
+]},
+
+{t:"Pengantar Histologi",l:"C1-C2",q:"Histologi juga dikenal sebagai...",o:[
+ ["Makroanatomi",false,"Makroanatomi mempelajari struktur yang dapat dilihat dengan mata telanjang."],
+ ["Mikroanatomi",true,"Histologi adalah mikroanatomi, yaitu ilmu yang mempelajari struktur jaringan dengan bantuan mikroskop."],
+ ["Fisiologi",false,"Fisiologi mempelajari fungsi tubuh, sedangkan histologi mempelajari struktur mikroskopis jaringan."],
+ ["Patologi",false,"Patologi mempelajari perubahan akibat penyakit, bukan ilmu struktur mikroskopis."],
+ ["Biokimia",false,"Biokimia mempelajari proses kimia dalam tubuh, bukan struktur jaringan."]
+]},
+{t:"Pengantar Histologi",l:"C1-C2",q:"Materi histologi yang diajarkan pada Blok BMS 1 mencakup...",o:[
+ ["Sel, jaringan ikat, tulang, tulang rawan, darah, dan sistem limfatika",true,"Blok BMS 1 mencakup sel, jaringan ikat, tulang, tulang rawan, darah, dan sistem limfatika."],
+ ["Saraf, epitel, otot, dan integumentum",false,"Materi tersebut diajarkan pada BMS 2, bukan BMS 1."],
+ ["Sistem kardiovaskuler, respirasi, mata, dan telinga",false,"Materi tersebut diajarkan pada BMS 3."],
+ ["Sistem digestivus dan uropoetika",false,"Materi tersebut diajarkan pada BMS 4."],
+ ["Sistem endokrin dan reproduksi",false,"Materi tersebut diajarkan pada BMS 5."]
+]},
+{t:"Pengantar Histologi",l:"C1-C2",q:"Resolusi minimal mikroskop cahaya adalah...",o:[
+ ["0,1 nm",false,"0,1 nm adalah resolusi teoritis mikroskop elektron, bukan mikroskop cahaya."],
+ ["2 nm",false,"2 nm adalah resolusi praktis mikroskop elektron."],
+ ["2 µm",true,"Resolusi minimal mikroskop cahaya adalah 2 µm."],
+ ["20 µm",false,"20 µm melebihi resolusi minimal mikroskop cahaya."],
+ ["100 µm",false,"100 µm adalah batas atas diameter sel eukariota, bukan resolusi mikroskop."]
+]},
+{t:"Pengantar Histologi",l:"C3-C4",q:"Mahasiswa mengamati preparat jaringan dengan pewarnaan rutin Hematoxylin-Eosin (HE). Struktur yang tampak basofilik (berwarna biru-ungu) adalah...",o:[
+ ["Mitokondria",false,"Mitokondria bersifat asidofilik, sehingga tidak tampak biru-ungu pada pewarnaan HE."],
+ ["Granul sekretoris sitoplasma",false,"Granul sekretoris bersifat asidofilik pada pewarnaan HE."],
+ ["Kolagen",false,"Kolagen bersifat asidofilik pada pewarnaan HE."],
+ ["Nukleus (DNA/asam nukleat)",true,"Pewarna basa seperti hematoxylin mengikat asam nukleat, sehingga nukleus bersifat basofilik."],
+ ["Protein sitoplasma",false,"Protein sitoplasma bersifat asidofilik, bukan basofilik."]
+]},
+{t:"Pengantar Histologi",l:"C3-C4",q:"Seorang peneliti ingin melabel protein tertentu yang diproduksi sel dengan memanfaatkan ikatan antigen-antibodi, agar protein tersebut tampak jelas di preparat. Teknik pewarnaan yang paling tepat digunakan adalah...",o:[
+ ["Hematoxylin-Eosin (HE)",false,"HE adalah pewarnaan rutin untuk mengenali jaringan secara umum, tidak untuk melabel protein tertentu."],
+ ["Imunohistokimia (IHC)",true,"Imunohistokimia digunakan untuk melabel protein tertentu dengan memanfaatkan ikatan antigen-antibodi."],
+ ["Toluidin blue",false,"Toluidin blue adalah pewarna basa tanpa mekanisme antigen-antibodi."],
+ ["Alcian blue",false,"Alcian blue adalah pewarna basa, bukan teknik antigen-antibodi."],
+ ["Methylene blue",false,"Methylene blue adalah pewarna basa, bukan teknik antigen-antibodi."]
+]},
+{t:"Pengantar Histologi",l:"C3-C4",q:"Peneliti ingin mengamati bentuk permukaan tiga dimensi sel darah merah dengan resolusi tinggi. Jenis mikroskop yang paling tepat adalah...",o:[
+ ["Mikroskop cahaya brightfield",false,"Mikroskop cahaya memiliki resolusi minimal 2 µm dan tidak cukup untuk detail permukaan sel yang diminta."],
+ ["Mikroskop elektron transmisi (TEM)",false,"TEM menampilkan struktur internal dalam dua dimensi, bukan permukaan tiga dimensi."],
+ ["Mikroskop elektron pemindai (SEM)",true,"SEM menampilkan struktur permukaan dalam tiga dimensi, sehingga cocok untuk melihat bentuk permukaan sel darah merah."],
+ ["Mikroskop fluoresensi",false,"Mikroskop fluoresensi digunakan untuk sinyal fluoresen, bukan untuk permukaan tiga dimensi."],
+ ["Mikroskop polarisasi",false,"Mikroskop polarisasi digunakan untuk struktur yang anisotropik seperti serat kolagen, bukan permukaan tiga dimensi sel."]
+]}
+];
+const BK2 = [
+{t:"Nomina Anatomika",l:"C1-C2",q:"Kata 'anatomi' berasal dari bahasa Yunani 'anatome', yang terdiri dari 'ana' (memisahkan) dan 'tome' (memotong). Latin padanannya adalah...",o:[
+ ["Physiologia",false,"Physiologia berarti ilmu fungsi tubuh, bukan padanan Latin dari anatomi."],
+ ["Dissecare",true,"Padanan Latin anatomi adalah dissecare, yang berarti membedah. Dari sini muncul istilah dissection."],
+ ["Histologia",false,"Histologia adalah ilmu jaringan mikroskopis, bukan padanan Latin anatomi."],
+ ["Pathologia",false,"Pathologia adalah ilmu tentang penyakit, bukan padanan Latin anatomi."],
+ ["Morphologia",false,"Morfologi bukan padanan Latin anatomi yang lazim digunakan dalam terminologi anatomi."]
+]},
+{t:"Nomina Anatomika",l:"C1-C2",q:"Posisi anatomi sebagai acuan semua istilah anatomi didefinisikan sebagai...",o:[
+ ["Tubuh berbaring telentang dengan lengan di atas kepala",false,"Posisi tersebut bukan posisi acuan anatomi."],
+ ["Tubuh berdiri tegak, kepala dan mata menghadap ke depan, lengan di samping dengan telapak tangan menghadap ke depan",true,"Posisi anatomi adalah tubuh berdiri tegak dengan kepala, mata, dan telapak kaki menghadap ke depan, lengan di samping, dan telapak tangan menghadap ke depan."],
+ ["Tubuh duduk dengan kedua tangan di pangkuan",false,"Posisi duduk bukan posisi acuan anatomi."],
+ ["Tubuh berdiri dengan telapak tangan menghadap ke belakang",false,"Pada posisi anatomi, telapak tangan menghadap ke depan, bukan ke belakang."],
+ ["Tubuh tengkurap dengan kepala menghadap ke samping",false,"Posisi tengkurap bukan posisi acuan anatomi."]
+]},
+{t:"Nomina Anatomika",l:"C1-C2",q:"Istilah yang setara dengan 'anterior' dalam terminologi anatomi adalah...",o:[
+ ["Dorsal",false,"Dorsal adalah padanan dari posterior, yaitu bagian belakang tubuh."],
+ ["Ventral",true,"Anterior = ventral = rostral. Anterior adalah bagian depan tubuh."],
+ ["Caudal",false,"Caudal adalah padanan dari inferior, yaitu lebih dekat ke kaki."],
+ ["Medial",false,"Medial berarti lebih dekat ke bidang median, bukan padanan anterior."],
+ ["Proksimal",false,"Proksimal berarti lebih dekat ke pangkal anggota gerak, bukan padanan anterior."]
+]},
+{t:"Nomina Anatomika",l:"C3-C4",q:"Dalam posisi anatomi, sebuah cedera terletak di sisi jari kelingking (jari V) pada tangan, sedangkan cedera lain di sisi ibu jari (jari I). Dibandingkan dengan bidang median, jari V berada di sisi...",o:[
+ ["Lateral, karena lebih jauh dari bidang median",false,"Lateral berarti lebih jauh dari bidang median. Ibu jari (jari I) berada di lateral, bukan jari V."],
+ ["Medial, karena lebih dekat ke bidang median",true,"Jari V (jari kelingking) berada di sisi medial tangan, yaitu lebih dekat ke bidang median."],
+ ["Proksimal, karena lebih dekat ke pangkal",false,"Proksimal berkaitan dengan jarak dari pangkal anggota gerak, bukan dengan bidang median."],
+ ["Distal, karena lebih jauh dari pangkal",false,"Distal berkaitan dengan jarak dari pangkal anggota gerak, bukan dengan bidang median."],
+ ["Superfisial, karena dekat dengan permukaan kulit",false,"Superfisial berkaitan dengan kedalaman terhadap permukaan, bukan dengan sisi bidang median."]
+]},
+{t:"Nomina Anatomika",l:"C3-C4",q:"Seorang radiografer diminta membuat potongan tubuh yang membagi tubuh menjadi bagian depan dan bagian belakang, dengan sudut tegak lurus terhadap bidang median. Bidang yang dimaksud adalah bidang...",o:[
+ ["Sagital",false,"Bidang sagital sejajar dengan bidang median dan membagi tubuh menjadi kiri dan kanan."],
+ ["Median (midsagital)",false,"Bidang median membagi tubuh menjadi belahan kanan dan kiri, bukan depan dan belakang."],
+ ["Koronal (frontal)",true,"Bidang koronal adalah bidang vertikal dengan sudut tegak lurus terhadap bidang median, yang membagi tubuh menjadi bagian depan dan belakang."],
+ ["Horizontal",false,"Bidang horizontal membagi tubuh menjadi bagian superior dan inferior."],
+ ["Parasagital",false,"Bidang parasagital sejajar dengan bidang median, bukan tegak lurus terhadap bidang median."]
+]},
+{t:"Nomina Anatomika",l:"C3-C4",q:"Pada pemeriksaan paru, seorang dokter menjelaskan bahwa selaput yang menutupi permukaan luar paru disebut pleura visceralis. Sementara selaput yang melapisi dinding dalam rongga dada disebut...",o:[
+ ["Pleura visceralis",false,"Pleura visceralis adalah selaput yang menutupi organ, yaitu permukaan luar paru, sehingga bukan jawaban untuk dinding rongga dada."],
+ ["Pleura parietalis",true,"Parietal adalah selaput luar dinding suatu rongga tubuh. Pleura parietalis membatasi dinding dalam rongga dada."],
+ ["Perikardium viseralis",false,"Perikardium viseralis menutupi jantung, tidak melapisi dinding rongga dada."],
+ ["Peritoneum mesenterium",false,"Peritoneum mesenterium berkaitan dengan rongga abdomen, bukan dinding rongga dada."],
+ ["Mediastinum",false,"Mediastinum adalah ruang di antara paru, bukan selaput yang melapisi dinding dada."]
+]},
+
+{t:"Osteologi Truncus",l:"C1-C2",q:"Jumlah total tulang vertebra pada columna vertebralis adalah...",o:[
+ ["24",false,"24 adalah jumlah vertebra yang terpisah di bagian atas. Sembilan vertebra lain menyatu di bagian bawah."],
+ ["26",false,"Angka 26 tidak sesuai dengan jumlah total vertebra."],
+ ["33",true,"Total vertebra adalah 33: 24 terpisah di atas, dan 9 menyatu menjadi sakrum (5) dan koksiks (4)."],
+ ["9",false,"9 adalah jumlah vertebra yang menyatu di bagian bawah, bukan jumlah total."],
+ ["5",false,"5 adalah jumlah vertebra sakrum, bukan jumlah total."]
+]},
+{t:"Osteologi Truncus",l:"C1-C2",q:"Ligamen yang berjalan vertikal pada permukaan anterior badan vertebra dan berfungsi mencegah hiperekstensi tulang belakang adalah...",o:[
+ ["Ligamen longitudinal posterior",false,"Ligamen longitudinal posterior berjalan di permukaan posterior badan vertebra dan mencegah hiperfleksi."],
+ ["Ligamentum flavum",false,"Ligamentum flavum menghubungkan lamina dan merupakan ligamen terkuat, tetapi tidak berjalan di permukaan anterior badan vertebra."],
+ ["Ligamen longitudinal anterior",true,"Ligamen longitudinal anterior berjalan vertikal di permukaan anterior badan vertebra dan mencegah hiperekstensi punggung."],
+ ["Ligamen interspinosum",false,"Ligamen interspinosum menghubungkan proses spinosus, bukan permukaan anterior badan vertebra."],
+ ["Ligamen supraspinosum",false,"Ligamen supraspinosum menghubungkan ujung proses spinosus, bukan permukaan anterior badan vertebra."]
+]},
+{t:"Osteologi Truncus",l:"C1-C2",q:"Ligamen terkuat pada tulang belakang yang juga membentuk dinding posterior kanalis spinalis bersama lamina adalah...",o:[
+ ["Ligamentum flavum",true,"Ligamentum flavum adalah ligamen terkuat pada tulang belakang. Ligamen ini menghubungkan lamina dan membentuk dinding posterior kanalis spinalis bersama lamina."],
+ ["Ligamen intertransversum",false,"Ligamen intertransversum berada di antara proses transversus dan bukan yang terkuat."],
+ ["Ligamen supraspinosum",false,"Ligamen supraspinosum menghubungkan ujung proses spinosus dan tidak membentuk dinding kanalis spinalis."],
+ ["Ligamen longitudinal posterior",false,"Ligamen ini lebih sempit dan lebih lemah, serta melekat pada diskus intervertebralis."],
+ ["Ligamen longitudinal anterior",false,"Ligamen ini sangat lebar dan kuat, tetapi terletak di permukaan anterior badan vertebra."]
+]},
+{t:"Osteologi Truncus",l:"C3-C4",q:"Seorang pria berusia 55 tahun mengeluh tinggi badannya berkurang dan nyeri saat bergerak. Pada pemeriksaan, diskus intervertebralis lumbal terlihat mengempis. Perubahan pada nukleus pulposus yang paling mungkin mendasari kondisi ini adalah...",o:[
+ ["Peningkatan kadar air hingga nukleus pulposus membengkak",false,"Nukleus pulposus justru mengalami dehidrasi seiring usia, bukan peningkatan air."],
+ ["Dehidrasi permanen nukleus pulposus yang menyebabkan diskus mendatar dan foramen intervertebralis menyempit",true,"Pada usia 40–60 tahun terjadi dehidrasi permanen nukleus pulposus, yang menyebabkan berkurangnya ROM dan penyempitan foramen intervertebralis."],
+ ["Kalsifikasi anulus fibrosus menjadi tulang keras",false,"Kalsifikasi anulus fibrosus bukan perubahan utama pada kondisi ini. Yang berubah adalah dehidrasi nukleus pulposus."],
+ ["Pelebaran kanalis spinalis akibat ligamen yang melemah",false,"Kondisi ini menyebabkan penyempitan foramen, bukan pelebaran kanalis spinalis."],
+ ["Kerusakan total ligamen longitudinal anterior sehingga badan vertebra bergeser ke depan",false,"Kerusakan total ligamen dengan pergeseran vertebra bukan penyebab penurunan tinggi diskus pada kasus ini."]
+]},
+{t:"Osteologi Truncus",l:"C3-C4",q:"Pada pemeriksaan radiologi seorang atlet muda, ditemukan defek pada pars interarticularis di vertebra lumbal. Kondisi ini secara klinis disebut...",o:[
+ ["Spondilosis",false,"Spondilosis adalah degenerasi sendi tulang belakang, bukan defek pada pars interarticularis."],
+ ["Spondilolisis",true,"Spondilolisis adalah defek yang muncul ketika pars interarticularis mengalami fraktur. Ini merupakan lokasi umum fraktur stres pada tulang belakang lumbal."],
+ ["Spondilolistesis",false,"Spondilolistesis adalah pergeseran vertebra, bukan istilah untuk defek pars interarticularis."],
+ ["Kifosis",false,"Kifosis adalah kelengkungan tulang belakang ke depan di toraks, bukan defek pars."],
+ ["Skoliosis",false,"Skoliosis adalah kelengkungan lateral tulang belakang, bukan defek pars interarticularis."]
+]},
+
+{t:"Oksidasi Biologi",l:"C1-C2",q:"Enzim yang menggunakan oksigen sebagai akseptor hidrogen sehingga membentuk air (H2O) atau H2O2 disebut...",o:[
+ ["Dehidrogenase",false,"Dehidrogenase tidak menggunakan oksigen sebagai akseptor hidrogen."],
+ ["Oksidase",true,"Oksidase memindahkan hidrogen dari substrat dan menggunakan oksigen sebagai penerima hidrogen, membentuk H2O atau H2O2."],
+ ["Katalase",false,"Katalase menguraikan H2O2 menjadi H2O dan O2, bukan enzim yang memindahkan hidrogen ke oksigen dari substrat."],
+ ["Oksigenase",false,"Oksigenase memasukkan oksigen ke dalam molekul substrat, bukan sekadar menjadikan oksigen akseptor hidrogen."],
+ ["Peroksidase",false,"Peroksidase mereduksi senyawa peroksida dengan berbagai akseptor elektron, bukan oksigen sebagai akseptor utama."]
+]},
+{t:"Oksidasi Biologi",l:"C1-C2",q:"Reaksi yang dikatalisis oleh enzim katalase adalah...",o:[
+ ["2H2O2 → 2H2O + O2",true,"Katalase mengubah H2O2 menjadi H2O dan O2, dengan hidrogen peroksida sebagai donor dan akseptor elektron."],
+ ["AH2 + ½O2 → A + H2O",false,"Reaksi tersebut adalah contoh reaksi oksidase, bukan katalase."],
+ ["ATP + AMP → 2ADP",false,"Reaksi tersebut dikatalisis enzim adenilil kinase, bukan katalase."],
+ ["Fe2+ → Fe3+ + e−",false,"Reaksi ini menggambarkan oksidasi besi, bukan reaksi katalase."],
+ ["NAD+ + 2H+ + 2e− → NADH + H+",false,"Reaksi ini adalah reaksi dehidrogenase NAD+, bukan katalase."]
+]},
+{t:"Oksidasi Biologi",l:"C1-C2",q:"Gugus prostetik flavoprotein, yaitu FMN dan FAD, dibentuk dari vitamin...",o:[
+ ["Vitamin C (asam askorbat)",false,"Vitamin C berperan sebagai antioksidan dan akseptor elektron peroksidase, bukan pembentuk FMN dan FAD."],
+ ["Vitamin B2 (riboflavin)",true,"FMN dan FAD dalam tubuh dibentuk dari vitamin riboflavin (vitamin B2)."],
+ ["Niasin",false,"Niasin membentuk NAD+ dan NADP+, bukan FMN dan FAD."],
+ ["Vitamin E (α-tokoferol)",false,"Vitamin E berperan sebagai antioksidan, bukan pembentuk FMN dan FAD."],
+ ["Vitamin A",false,"Vitamin A tidak berperan dalam pembentukan FMN atau FAD."]
+]},
+{t:"Oksidasi Biologi",l:"C3-C4",q:"Seorang pasien mengalami keracunan sianida. Mekanisme toksik utama sianida pada sel adalah menghambat enzim yang berada pada rantai respirasi mitokondria, sehingga pembentukan ATP terhenti. Enzim yang dihambat tersebut adalah...",o:[
+ ["Katalase",false,"Katalase mengurai H2O2 dan tidak berada pada rantai respirasi mitokondria."],
+ ["Sitokrom oksidase (sitokrom a3)",true,"Sitokrom oksidase berada pada rantai respirasi mitokondria dan dihambat oleh CO, sianida, dan hidrogen sulfida."],
+ ["Superoksida dismutase",false,"SOD mengubah superoksida menjadi H2O2 dan O2, dan bukan target utama sianida."],
+ ["Xantin oksidase",false,"Xantin oksidase mengubah basa purin menjadi asam urat, dan bukan enzim rantai respirasi."],
+ ["Peroksidase",false,"Peroksidase tidak termasuk enzim rantai respirasi yang dihambat sianida."]
+]},
+{t:"Oksidasi Biologi",l:"C3-C4",q:"Seorang pasien mengonsumsi fenobarbital dalam jangka panjang. Dokter menjelaskan bahwa obat tersebut meningkatkan jumlah sistem hidroksilasi obat di sel hati. Sistem yang dimaksud adalah...",o:[
+ ["Katalase dan peroksisom",false,"Katalase dan peroksisom mengatur H2O2 dan bukan sistem hidroksilasi obat."],
+ ["Sitokrom P450 pada mikrosom hati",true,"Fenobarbital meningkatkan pembentukan mikrosom dan sitokrom P450, yang berperan dalam hidroksilasi obat di hati agar lebih mudah diekskresi."],
+ ["Sitokrom c pada rantai respirasi",false,"Sitokrom c berperan dalam transfer elektron rantai respirasi, bukan hidroksilasi obat di mikrosom."],
+ ["Dehidrogenase NAD+",false,"Dehidrogenase NAD+ berperan dalam glikolisis dan siklus Krebs, bukan hidroksilasi obat di mikrosom."],
+ ["Superoksida dismutase",false,"SOD mengubah superoksida menjadi H2O2 dan O2, tidak berperan dalam hidroksilasi obat."]
+]},
+{t:"Oksidasi Biologi",l:"C3-C4",q:"Pada sel yang terpapar radikal superoksida, enzim superoksida dismutase bekerja mengubah superoksida menjadi hidrogen peroksida dan oksigen. Reaksi tersebut paling tepat ditulis sebagai...",o:[
+ ["O2− + O2− + 2H+ → H2O2 + O2",true,"Reaksi SOD ditulis dengan persamaan tersebut. Superoksida dapat bertindak sebagai oksidan maupun reduktan."],
+ ["2H2O2 → 2H2O + O2",false,"Reaksi ini adalah reaksi katalase, bukan SOD."],
+ ["AH2 + O2 → A + H2O2",false,"Reaksi tersebut adalah bentuk umum oksidase, bukan reaksi superoksida dismutase."],
+ ["ATP + AMP → 2ADP",false,"Reaksi ini dikatalisis adenilil kinase, bukan SOD."],
+ ["Fe2+ + H2O2 → Fe3+ + OH−",false,"Reaksi ini bukan reaksi superoksida dismutase."]
+]}
+];
+const BK3 = [
+{t:"Bioenergetika",l:"C1-C2",q:"Bentuk energi yang dapat digunakan sel untuk melakukan kerja pada suhu dan tekanan tetap adalah...",o:[
+ ["Energi panas",false,"Energi panas hanya dapat melakukan kerja melalui perubahan suhu atau tekanan, sehingga tidak dapat dipakai sel pada suhu dan tekanan tetap."],
+ ["Energi bebas (ΔG)",true,"Energi bebas adalah energi yang dapat melakukan kerja pada suhu dan tekanan tetap, sehingga merupakan bentuk energi yang dapat digunakan sel."],
+ ["Entropi",false,"Entropi adalah energi yang tidak berguna atau keadaan acak, bukan energi yang dapat dipakai sel."],
+ ["Energi kinetik panas molekul",false,"Energi kinetik molekul adalah energi gerak yang tidak otomatis dapat dipakai sel untuk kerja pada suhu dan tekanan tetap."],
+ ["Energi total sistem dan lingkungan",false,"Energi total sistem dan lingkungan bersifat konstan menurut Hukum I termodinamika, bukan energi yang dapat dipakai untuk kerja sel."]
+]},
+{t:"Bioenergetika",l:"C1-C2",q:"Suatu reaksi biokimia berlangsung spontan dengan kehilangan energi bebas (ΔG negatif). Reaksi ini disebut...",o:[
+ ["Endergonik",false,"Reaksi endergonik memiliki ΔG positif dan hanya terjadi bila ada tambahan energi bebas."],
+ ["Eksergonik",true,"ΔG negatif berarti reaksi berjalan spontan dengan kehilangan energi bebas dan disebut eksergonik (katabolisme)."],
+ ["Dalam keseimbangan",false,"Reaksi dalam keseimbangan memiliki ΔG = 0, sehingga tidak ada perubahan netto."],
+ ["Anabolisme",false,"Anabolisme adalah reaksi sintesis yang endergonik, bukan reaksi spontan."],
+ ["Isotermik",false,"Isotermik menggambarkan kondisi suhu konstan, bukan kategori reaksi berdasarkan ΔG."]
+]},
+{t:"Bioenergetika",l:"C1-C2",q:"Senyawa berikut termasuk golongan high energy phosphate (HEP) yang berperan sebagai aliran energi dalam sel adalah...",o:[
+ ["ADP",false,"ADP termasuk low energy phosphate (LEP)."],
+ ["AMP",false,"AMP termasuk low energy phosphate (LEP)."],
+ ["Glukosa-6-fosfat",false,"Glukosa-6-fosfat termasuk low energy phosphate (LEP)."],
+ ["Fosfoenolpiruvat",true,"Fosfoenolpiruvat termasuk high energy phosphate (HEP), bersama kreatin fosfat, ATP, dan GTP."],
+ ["Glukosa-1-fosfat",false,"Glukosa-1-fosfat termasuk low energy phosphate (LEP)."]
+]},
+{t:"Bioenergetika",l:"C3-C4",q:"Pada reaksi glukosa + ATP → glukosa-6-fosfat + ADP yang dikatalisis heksokinase, reaksi pembentukan glukosa-6-fosfat sendiri bersifat endergonik. Peran ATP dalam reaksi ini paling tepat dijelaskan sebagai...",o:[
+ ["Katalis yang tidak ikut bereaksi",false,"ATP ikut bereaksi dengan memberikan gugus fosfatnya, sehingga bukan katalis."],
+ ["Donor gugus fosfat berenergi tinggi yang menggabungkan reaksi eksergonik dengan endergonik (coupling)",true,"Hidrolisis ATP (eksergonik) dirangkaikan dengan pembentukan glukosa-6-fosfat (endergonik), sehingga reaksi endergonik dapat berjalan."],
+ ["Akseptor elektron yang direduksi menjadi NADH",false,"ATP bukan akseptor elektron. Akseptor elektron pada respirasi adalah NAD+ atau FAD."],
+ ["Sumber oksigen untuk oksidasi glukosa",false,"ATP tidak menyediakan oksigen. Oksigen berasal dari proses respirasi."],
+ ["Penghambat reaksi agar kesetimbangan tercapai",false,"ATP berfungsi mendorong reaksi endergonik, bukan menghambatnya."]
+]},
+{t:"Bioenergetika",l:"C3-C4",q:"Seorang atlet melakukan sprint berat dan sel ototnya kekurangan O2. Pada kondisi ini, glikolisis menghasilkan produk akhir dan energi bersih yang paling tepat adalah...",o:[
+ ["Asam piruvat dan 36 ATP",false,"Asam piruvat tidak menjadi produk akhir dalam kondisi tanpa oksigen, dan 36 ATP dihasilkan pada respirasi aerobik, bukan glikolisis."],
+ ["Asam laktat dan 2 ATP bersih",true,"Glikolisis menghasilkan net gain 2 ATP, dan pada otot tanpa oksigen fermentasi membentuk asam laktat."],
+ ["CO2 dan H2O dan 36 ATP",false,"CO2, H2O, dan 36 ATP dihasilkan dari respirasi aerobik (siklus Krebs dan rantai transpor elektron), bukan dari kondisi kekurangan O2."],
+ ["Asam laktat dan 36 ATP",false,"Asam laktat benar, tetapi 36 ATP dihasilkan dari respirasi aerobik, bukan glikolisis tanpa oksigen."],
+ ["Etanol dan 2 ATP",false,"Etanol terbentuk pada fermentasi ragi, bukan pada otot manusia."]
+]},
+{t:"Bioenergetika",l:"C3-C4",q:"Pada kontraksi otot yang sangat cepat dan singkat, ATP yang tersedia segera dipakai. Senyawa cadangan energi pada otot yang dapat memindahkan gugus fosfatnya ke ADP untuk membentuk ATP dalam reaksi yang dikatalisis kreatin kinase adalah...",o:[
+ ["Arginin fosfat",false,"Arginin fosfat adalah fosfagen pada invertebrata, bukan cadangan energi otot manusia."],
+ ["Kreatin fosfat (fosfokreatin)",true,"Fosfokreatin berperan dalam kerja otot dan dapat memindahkan gugus fosfatnya ke ATP melalui enzim kreatin kinase."],
+ ["Fosfoenolpiruvat",false,"Fosfoenolpiruvat adalah HEP dari glikolisis dan diubah oleh piruvat kinase, bukan oleh kreatin kinase."],
+ ["Glukosa-6-fosfat",false,"Glukosa-6-fosfat adalah LEP dan bukan cadangan energi otot dengan kreatin kinase."],
+ ["Karbamoil fosfat",false,"Karbamoil fosfat adalah HEP yang tidak berperan sebagai cadangan energi otot."]
+]},
+
+{t:"Biokimia Air dan Mineral",l:"C1-C2",q:"Sekitar berapa persen kalsium total dalam tubuh terdapat di tulang?",o:[
+ ["85%",false,"85% adalah persentase fosfat (PO4) yang ditemukan di tulang, bukan kalsium."],
+ ["50%",false,"Persentase 50% bukan proporsi kalsium di tulang."],
+ ["99%",true,"Sekitar 99% dari total Ca2+ tubuh terdapat di tulang dan gigi."],
+ ["15%",false,"15% adalah persentase kalsium yang diabsorbsi dari diet tinggi protein, bukan persentase yang tersimpan di tulang."],
+ ["5%",false,"5% adalah persentase kalsium yang diabsorbsi dari diet rendah protein, bukan persentase di tulang."]
+]},
+{t:"Biokimia Air dan Mineral",l:"C1-C2",q:"Mineral yang tergolong makro elemen, dengan kebutuhan ≥100 mg per hari, adalah...",o:[
+ ["Kalsium (Ca)",true,"Ca, P, Mg, Na, K, Cl, dan S tergolong makro elemen dengan kebutuhan ≥100 mg per hari."],
+ ["Seng (Zn)",false,"Zn termasuk mikro elemen (trace element) dengan kebutuhan <100 mg per hari."],
+ ["Yodium (I)",false,"Yodium termasuk mikro elemen (trace element)."],
+ ["Tembaga (Cu)",false,"Cu termasuk mikro elemen (trace element)."],
+ ["Besi (Fe)",false,"Fe termasuk mikro elemen (trace element)."]
+]},
+{t:"Biokimia Air dan Mineral",l:"C1-C2",q:"Hormon yang meningkatkan kadar kalsium plasma tetapi menurunkan kadar fosfat anorganik adalah...",o:[
+ ["Vitamin D (1,25-dihidroksikolekalsiferol)",false,"Vitamin D meningkatkan kalsium plasma dan juga fosfat anorganik, bukan menurunkannya."],
+ ["Kalsitonin",false,"Kalsitonin menurunkan kalsium plasma dan fosfat anorganik."],
+ ["Hormon paratiroid (PTH)",true,"PTH meningkatkan kalsium plasma tetapi menurunkan kadar fosfat anorganik."],
+ ["Insulin",false,"Insulin bukan pengatur utama kalsium dan fosfat."],
+ ["Estrogen",false,"Estrogen bukan pengatur utama kalsium dan fosfat."]
+]},
+{t:"Biokimia Air dan Mineral",l:"C3-C4",q:"Seorang pasien mengalami diare berat sehingga kehilangan air lebih banyak daripada elektrolit. Dampak yang paling tepat terhadap sel tubuh adalah...",o:[
+ ["Air masuk ke dalam sel sehingga sel membengkak",false,"Pada kehilangan air lebih banyak dari elektrolit, cairan ekstrasel menjadi lebih pekat, sehingga air justru keluar dari sel."],
+ ["Air keluar dari sel karena cairan ekstrasel menjadi lebih pekat",true,"Kehilangan air lebih besar daripada elektrolit membuat cairan ekstrasel lebih pekat, sehingga air di dalam sel keluar."],
+ ["Tekanan osmotik sel tidak berubah sama sekali",false,"Perubahan konsentrasi cairan ekstrasel akan mengubah tekanan osmotik dan arah perpindahan air."],
+ ["Kalsium masuk ke dalam sel sebagai kompensasi",false,"Perpindahan kalsium bukan kompensasi utama pada kehilangan air."],
+ ["Sel menjadi lebih banyak menerima aquaporin",false,"Jumlah aquaporin tidak berubah sebagai respons utama terhadap dehidrasi."]
+]},
+{t:"Biokimia Air dan Mineral",l:"C3-C4",q:"Anak 2 tahun dengan pertumbuhan terhambat dan kaki bengkok. Pemeriksaan menunjukkan produksi dan mineralisasi tulang yang kurang. Penyebab yang paling mungkin adalah defisiensi vitamin D, karena vitamin D diperlukan untuk absorpsi kalsium dan fosfat di usus. Kondisi ini disebut...",o:[
+ ["Osteomalasia",false,"Osteomalasia adalah demineralisasi tulang yang sudah terbentuk pada orang dewasa, bukan kegagalan mineralisasi pada anak."],
+ ["Osteoporosis",false,"Osteoporosis adalah pengurangan massa tulang progresif karena penurunan estrogen pada pascamenopause."],
+ ["Rakitis (rickets)",true,"Rakitis ditandai produksi dan mineralisasi tulang yang kurang sehingga pertumbuhan gagal adekuat, dan dapat terjadi sekunder akibat defisiensi vitamin D."],
+ ["Tetani hipokalsemia",false,"Tetani adalah gejala hipokalsemia akut, bukan kondisi kekurangan mineralisasi tulang."],
+ ["Anemia defisiensi besi",false,"Anemia defisiensi besi berkaitan dengan Fe pada hemoglobin, bukan mineralisasi tulang."]
+]},
+{t:"Biokimia Air dan Mineral",l:"C3-C4",q:"Pompa Na+/K+-ATPase pada membran sel bekerja dalam setiap siklus yang menggunakan satu ATP. Dalam satu siklus, pompa ini mengeluarkan Na+ dan memasukkan K+ dalam jumlah...",o:[
+ ["2 Na+ keluar dan 3 K+ masuk",false,"Jumlah ion terbalik dari yang seharusnya."],
+ ["3 Na+ keluar dan 2 K+ masuk",true,"Pompa Na+/K+-ATPase mengeluarkan 3 Na+ dan memasukkan 2 K+ per siklus ATP."],
+ ["3 Na+ masuk dan 2 K+ keluar",false,"Arah pergerakan ion terbalik dari yang seharusnya."],
+ ["1 Na+ keluar dan 1 K+ masuk",false,"Jumlah ion tidak sesuai dengan mekanisme pompa Na+/K+-ATPase."],
+ ["2 Na+ keluar dan 2 K+ masuk",false,"Jumlah Na+ tidak sesuai dengan mekanisme pompa Na+/K+-ATPase."]
+]}
+];
+const BK4 = [
+{t:"Osteologi Ekstremitas",l:"C1-C2",q:"Tulang yang ukuran panjangnya melebihi lebarnya, misalnya os femur, os tibia, dan os humerus, disebut...",o:[
+ ["Os breve",false,"Os breve adalah tulang pendek dengan ukuran panjang, lebar, dan tebal yang hampir sama, misalnya ossa carpalia dan tarsalia."],
+ ["Os longum",true,"Os longum adalah tulang panjang yang ukuran panjangnya melebihi lebarnya, misalnya femur, tibia, dan humerus."],
+ ["Os planum",false,"Os planum adalah tulang pipih, misalnya os scapulae."],
+ ["Os pneumaticum",false,"Os pneumaticum adalah tulang berongga yang besar tetapi ringan, misalnya os temporalis dan maxillaris."],
+ ["Os sesamoidea",false,"Os sesamoidea adalah tulang yang terdapat pada persendian, misalnya os patella."]
+]},
+{t:"Osteologi Ekstremitas",l:"C1-C2",q:"Tulang yang terdapat pada persendian, contohnya os patella, disebut...",o:[
+ ["Os longum",false,"Os longum adalah tulang panjang, misalnya femur dan tibia."],
+ ["Os breve",false,"Os breve adalah tulang pendek, misalnya ossa carpalia."],
+ ["Os irreguler",false,"Os irreguler adalah tulang tidak beraturan, misalnya vertebra."],
+ ["Os sesamoidea",true,"Os sesamoidea adalah tulang yang terdapat pada persendian, dengan contoh os patella."],
+ ["Os pneumaticum",false,"Os pneumaticum adalah tulang berongga, misalnya os temporalis."]
+]},
+{t:"Osteologi Ekstremitas",l:"C1-C2",q:"Ujung medial clavicula yang berartikulasi dengan bagian dari sternum membentuk sendi...",o:[
+ ["Acromioclavicular joint",false,"Acromioclavicular joint adalah sendi antara ujung lateral clavicula dan acromion scapula."],
+ ["Glenohumeral joint",false,"Glenohumeral joint adalah sendi antara caput humeri dan cavitas glenoidalis scapula."],
+ ["Sternoclavicular joint",true,"Bagian medial clavicula yang cembung berartikulasi dengan manubrium sterni, membentuk sternoclavicular joint."],
+ ["Scapulothoracic joint",false,"Scapulothoracic joint adalah hubungan scapula dengan costa, bukan clavicula dengan sternum."],
+ ["Coracoclavicular ligament",false,"Coracoclavicular adalah ligamen yang menghubungkan processus coracoideus dengan clavicula, bukan sendi clavicula dengan sternum."]
+]},
+{t:"Osteologi Ekstremitas",l:"C3-C4",q:"Seorang pasien mengalami dislokasi sendi bahu. Struktur tulang yang berartikulasi dengan caput humeri membentuk glenohumeral joint adalah...",o:[
+ ["Processus coracoideus scapula",false,"Processus coracoideus adalah tonjolan kecil seperti paruh burung gagak yang menjadi tempat melekat ligamen dan otot, bukan permukaan sendi dengan caput humeri."],
+ ["Cavitas glenoidalis scapula",true,"Cavitas glenoidalis adalah lekukan dangkal pada scapula yang berartikulasi dengan caput humerus membentuk glenohumeral joint."],
+ ["Acromion scapula",false,"Acromion membentuk AC joint dengan clavicula, bukan sendi dengan caput humeri."],
+ ["Tuberculum infraglenoidalis",false,"Tuberculum infraglenoidalis adalah tempat melekat caput longum m. triceps brachii, bukan permukaan sendi."],
+ ["Clavicula bagian lateral",false,"Ujung lateral clavicula berartikulasi dengan acromion membentuk AC joint, bukan dengan caput humeri."]
+]},
+{t:"Osteologi Ekstremitas",l:"C3-C4",q:"Saat pemeriksaan lengan bawah, seorang dokter meraba tulang di sisi ibu jari (lateral) yang berartikulasi dengan ulna di proksimal dan dengan ossa carpalia di distal. Tulang tersebut adalah...",o:[
+ ["Ulna",false,"Ulna terletak di medial radius, yaitu sisi kelingking, bukan sisi ibu jari."],
+ ["Humerus",false,"Humerus adalah tulang lengan atas, bukan tulang lengan bawah."],
+ ["Radius",true,"Radius terletak di lateral ulna (sisi ibu jari), berartikulasi dengan ulna di proksimal dan ossa carpalia di distal."],
+ ["Metacarpal 5",false,"Metacarpal adalah tulang telapak tangan, bukan tulang lengan bawah."],
+ ["Scapula",false,"Scapula adalah tulang bahu, bukan tulang lengan bawah."]
+]},
+{t:"Osteologi Ekstremitas",l:"C3-C4",q:"Pemeriksaan radiologi pada remaja 13 tahun memperlihatkan tiga tulang penyusun os coxae masih terpisah oleh tulang rawan di sekitar fossa acetabuli. Penyatuan fossa acetabuli berbentuk 'Y' akan terjadi pada usia...",o:[
+ ["10–12 tahun",false,"Acetabulum menyatu pada usia 15–17 tahun, bukan 10–12 tahun."],
+ ["15–17 tahun",true,"Acetabulum terbentuk pada usia 15–17 tahun dengan penyatuan ilium, ischium, dan pubis berbentuk Y."],
+ ["20–25 tahun",false,"Usia penyatuan acetabulum adalah 15–17 tahun, bukan 20–25 tahun."],
+ ["30–35 tahun",false,"Usia 30–35 tahun bukan usia penyatuan acetabulum."],
+ ["5–7 tahun",false,"Usia 5–7 tahun tidak sesuai dengan penyatuan acetabulum."]
+]},
+
+{t:"Fisiologi Tulang dan Gigi",l:"C1-C2",q:"Sel tulang yang paling banyak dan berumur panjang (hingga ±25 tahun), berfungsi mengatur remodelling tulang melalui sensor stres mekanis, adalah...",o:[
+ ["Osteoblas",false,"Osteoblas membentuk dan mengendapkan matriks tulang, dan bukan sel tulang yang paling banyak."],
+ ["Osteoklas",false,"Osteoklas berfungsi resorpsi tulang dan hanya berumur beberapa hari."],
+ ["Osteosit",true,"Osteosit adalah sel tulang yang paling banyak dan berumur panjang, hingga 25 tahun. Sel ini mengatur remodelling dengan merasakan stres mekanis."],
+ ["Kondrosit",false,"Kondrosit adalah sel tulang rawan, bukan sel utama jaringan tulang."],
+ ["Makrofag",false,"Makrofag adalah sel fagositik dan bukan sel utama jaringan tulang."]
+]},
+{t:"Fisiologi Tulang dan Gigi",l:"C1-C2",q:"Osteoklas berasal dari...",o:[
+ ["Diferensiasi kondrosit",false,"Kondrosit berasal dari kartilago dan tidak menjadi osteoklas."],
+ ["Fusi sekitar 50 monosit atau makrofag yang membentuk giant cell polinukleat",true,"Osteoklas berasal dari fusi kira-kira 50 monosit atau makrofag menjadi giant cell polinukleat."],
+ ["Diferensiasi fibroblas",false,"Fibroblas menghasilkan serat kolagen, bukan sumber osteoklas."],
+ ["Diferensiasi osteosit",false,"Osteosit adalah sel tulang yang terperangkap dalam matriks dan tidak menjadi osteoklas."],
+ ["Sel mesenkim langsung",false,"Sel mesenkim berdiferensiasi menjadi osteoblas, bukan menjadi osteoklas langsung."]
+]},
+{t:"Fisiologi Tulang dan Gigi",l:"C1-C2",q:"Tulang panjang (long bone) terbentuk melalui proses osifikasi...",o:[
+ ["Intramembranosa, yang terjadi pada jaringan ikat fibrosa",false,"Osifikasi intramembranosa terjadi pada jaringan ikat fibrosa dan membentuk tulang pipih, bukan proses utama pembentukan tulang panjang."],
+ ["Endokondral, yang terjadi di dalam kartilago",true,"Osifikasi endokondral terjadi di dalam kartilago, mulai minggu ke-9 setelah fertilisasi, dan membentuk long bone."],
+ ["Aposisional dari periosteum saja",false,"Aposisi periosteum bukan proses utama pembentukan tulang panjang."],
+ ["Resorpsi osteoklas murni",false,"Resorpsi osteoklas adalah proses penguraian tulang, bukan pembentukan tulang panjang."],
+ ["Mineralisasi gigi",false,"Mineralisasi gigi adalah proses pada gigi, bukan pembentukan tulang panjang."]
+]},
+{t:"Fisiologi Tulang dan Gigi",l:"C3-C4",q:"Pada seorang pasien, satu osteoklas merusak sejumlah besar matriks tulang. Untuk memperbaiki kerusakan tersebut diperlukan sekitar 100–150 osteoblas. Jika aktivitas osteoklas meningkat berlebihan tanpa diimbangi osteoblas, dampak yang paling mungkin adalah...",o:[
+ ["Pembentukan tulang baru yang lebih padat",false,"Pembentukan tulang baru yang lebih padat terjadi bila osteoblas lebih aktif daripada osteoklas, bukan pada kondisi ini."],
+ ["Kehilangan massa tulang sehingga tulang menjadi lemah dan rentan patah",true,"Osteoklas bertanggung jawab atas resorpsi tulang, sedangkan perbaikannya oleh osteoblas memerlukan waktu lama. Ketidakseimbangan ini menyebabkan kehilangan massa tulang."],
+ ["Peningkatan kadar kalsium tulang karena pengendapan berlebih",false,"Pengendapan kalsium berlebih berasal dari aktivitas osteoblas, bukan dari peningkatan osteoklas."],
+ ["Penutupan growth plate lebih cepat",false,"Peningkatan osteoklas tidak menyebabkan penutupan growth plate lebih cepat."],
+ ["Penurunan kadar RANK L secara langsung",false,"RANK L dihasilkan osteoblas dan meningkatkan aktivasi osteoklas, sehingga peningkatan osteoklas tidak menurunkannya."]
+]},
+{t:"Fisiologi Tulang dan Gigi",l:"C3-C4",q:"Seorang pasien dengan kadar PTH tinggi mengalami peningkatan resorpsi tulang. PTH memengaruhi aktivasi osteoklas melalui mekanisme yang paling tepat adalah...",o:[
+ ["Menghambat aktivasi osteoklas dengan meningkatkan OPG",false,"OPG menghambat aktivasi osteoklas, sehingga mekanisme ini bertentangan dengan peningkatan resorpsi tulang."],
+ ["Meningkatkan RANK L yang dihasilkan osteoblas, sehingga aktivasi osteoklas meningkat",true,"RANK L dihasilkan osteoblas dan dikontrol oleh PTH, serta meningkatkan aktivasi osteoklas."],
+ ["Menurunkan aktivitas osteoblas dan osteoklas bersamaan",false,"PTH tidak menurunkan osteoblas dan osteoklas bersamaan melalui mekanisme ini."],
+ ["Meningkatkan kalsitonin yang menghambat osteoklas",false,"Kalsitonin menurunkan kalsium plasma, tetapi bukan mekanisme PTH dalam mengaktifkan osteoklas."],
+ ["Menghambat IL-1 dan macrophage colony stimulating factor",false,"IL-1 dan M-CSF justru meningkatkan aktivasi osteoklas, bukan dihambat PTH sebagai mekanisme utama."]
+]},
+{t:"Fisiologi Tulang dan Gigi",l:"C3-C4",q:"Kadar kalsium plasma seorang pasien turun mendadak. Kalsium yang segera dipertukarkan dengan plasma untuk menjaga konsentrasi kalsium plasma berasal dari...",o:[
+ ["Stable pool, yaitu tulang yang sudah termineralisasi",false,"Stable pool bertukar secara lambat dengan plasma, sehingga tidak mampu menyediakan kalsium dengan cepat."],
+ ["Labile pool, yaitu kalsium di kanalikulus yang bertukar cepat dengan plasma",true,"Pertukaran cepat berasal dari labile pool di kanalikulus ke plasma, dan pertukaran ini penting untuk mempertahankan konsentrasi kalsium plasma."],
+ ["Kalsium dalam saluran pencernaan",false,"Kalsium di saluran cerna belum diserap dan tidak menjadi sumber pertukaran cepat dengan plasma."],
+ ["Protein plasma yang terikat kalsium",false,"Kalsium yang terikat protein plasma tidak bebas dan bukan sumber pertukaran cepat."],
+ ["Kalsium dalam jaringan lunak",false,"Kalsium jaringan lunak (sekitar 0,9%) tidak merupakan pool pertukaran cepat dengan plasma."]
+]}
+];
+const BK5 = [
+{t:"Histologi Darah dan Hemopoiesis",l:"C1-C2",q:"Jenis leukosit yang paling banyak, yaitu 50–70% dari leukosit sirkulasi, dan biasanya paling dulu tiba di lokasi infeksi adalah...",o:[
+ ["Eosinofil",false,"Eosinofil hanya 1–4% dari leukosit."],
+ ["Basofil",false,"Basofil kurang dari 1% dari leukosit."],
+ ["Neutrofil",true,"Neutrofil adalah 50–70% dari leukosit sirkulasi dan biasanya menjadi leukosit pertama yang tiba di tempat infeksi."],
+ ["Limfosit",false,"Limfosit adalah agranulosit terbanyak kedua, sekitar sepertiga leukosit, dan bukan yang paling dulu tiba di infeksi."],
+ ["Monosit",false,"Monosit adalah prekursor makrofag dan bukan leukosit yang paling banyak."]
+]},
+{t:"Histologi Darah dan Hemopoiesis",l:"C1-C2",q:"Sel leukosit yang memiliki reseptor IgE di permukaannya dan menyekresi heparin serta histamin saat terpapar antigen adalah...",o:[
+ ["Neutrofil",false,"Neutrofil berperan dalam fagositosis bakteri, bukan melepaskan heparin dan histamin melalui reseptor IgE."],
+ ["Eosinofil",false,"Eosinofil memodulasi respons alergi dengan melepaskan kemokin dan sitokin, tetapi tidak dikenal melepaskan heparin dan histamin melalui reseptor IgE."],
+ ["Basofil",true,"Basofil memiliki reseptor IgE dan menyekresi heparin serta histamin sebagai respons terhadap antigen dan alergen."],
+ ["Limfosit B",false,"Limfosit B menghasilkan antibodi, bukan menyekresi heparin dan histamin."],
+ ["Monosit",false,"Monosit adalah prekursor makrofag dan tidak melepaskan heparin serta histamin."]
+]},
+{t:"Histologi Darah dan Hemopoiesis",l:"C1-C2",q:"Eritrosit normal dalam sirkulasi memiliki masa hidup rata-rata sekitar...",o:[
+ ["30 hari",false,"Masa hidup 30 hari tidak sesuai dengan eritrosit normal."],
+ ["60 hari",false,"Masa hidup 60 hari tidak sesuai dengan eritrosit normal."],
+ ["120 hari",true,"Eritrosit manusia normalnya bertahan dalam sirkulasi sekitar 120 hari."],
+ ["180 hari",false,"Masa hidup 180 hari tidak sesuai dengan eritrosit normal."],
+ ["365 hari",false,"Masa hidup 365 hari tidak sesuai dengan eritrosit normal."]
+]},
+{t:"Histologi Darah dan Hemopoiesis",l:"C3-C4",q:"Pada apusan darah tepi seorang pasien, ditemukan sel berukuran besar dengan inti berlekuk seperti huruf C dan granula azurofilik. Dokter menduga sel tersebut adalah prekursor makrofag dan osteoklas. Sel tersebut paling tepat adalah...",o:[
+ ["Neutrofil",false,"Neutrofil memiliki inti dengan dua hingga lima lobus dan bukan prekursor makrofag dan osteoklas."],
+ ["Monosit",true,"Monosit memiliki inti besar yang sering berlekuk seperti huruf C dan merupakan prekursor makrofag, osteoklas, dan sel fagosit mononuklear lain."],
+ ["Limfosit",false,"Limfosit adalah leukosit kecil dan tidak menjadi prekursor makrofag atau osteoklas."],
+ ["Basofil",false,"Basofil memiliki inti dengan dua lobus tidak beraturan yang tertutup granula besar dan tidak menjadi prekursor makrofag."],
+ ["Eosinofil",false,"Eosinofil memiliki inti bilobus dan tidak menjadi prekursor makrofag atau osteoklas."]
+]},
+{t:"Histologi Darah dan Hemopoiesis",l:"C3-C4",q:"Seorang pasien mengalami anemia berat sehingga kebutuhan eritrosit meningkat mendadak. Bagian sumsum tulang yang dapat meningkatkan aktivitas produksi sel darah beberapa kali lipat dalam waktu singkat dan berisi stroma serta sel hemopoietik adalah...",o:[
+ ["Sumsum tulang kuning yang penuh adiposit",false,"Sumsum tulang kuning dipenuhi adiposit yang menggantikan sebagian besar sel hemopoietik, sehingga tidak mampu meningkatkan produksi sel darah secara cepat."],
+ ["Sumsum tulang merah (red bone marrow)",true,"Sumsum merah adalah tempat pembentukan sel darah, dengan stroma jaringan ikat retikular dan kelompok sel hemopoietik. Aktivitasnya dapat meningkat beberapa kali lipat."],
+ ["Kelenjar limfe",false,"Kelenjar limfe adalah organ limfoid sekunder yang menyaring antigen, bukan tempat utama produksi eritrosit."],
+ ["Limpa",false,"Limpa menyaring darah dan menghancurkan eritrosit tua, bukan tempat utama hemopoiesis pada kasus ini."],
+ ["Timus",false,"Timus adalah organ tempat maturasi limfosit T, bukan tempat produksi eritrosit."]
+]},
+
+{t:"Fisiologi Darah dan Limfe",l:"C1-C2",q:"Persentase plasma dalam darah adalah...",o:[
+ ["45%",false,"45% adalah persentase elemen berbentuk (sel darah) dalam darah."],
+ ["55%",true,"Darah terdiri atas plasma 55% dan elemen berbentuk 45%."],
+ ["7%",false,"7% adalah persentase zat terlarut padat dalam plasma, bukan volume plasma terhadap darah keseluruhan."],
+ ["92%",false,"92% adalah persentase air dalam plasma, bukan volume plasma terhadap darah keseluruhan."],
+ ["8%",false,"8% adalah persentase volume total darah terhadap berat badan, bukan komposisi plasma."]
+]},
+{t:"Fisiologi Darah dan Limfe",l:"C1-C2",q:"Langkah pertama hemostasis pada cedera pembuluh darah adalah...",o:[
+ ["Koagulasi darah",false,"Koagulasi adalah langkah ketiga hemostasis, yang membentuk fibrin."],
+ ["Pembentukan sumbat trombosit",false,"Pembentukan sumbat trombosit adalah langkah kedua hemostasis."],
+ ["Spasme vaskuler",true,"Hemostasis terdiri atas tiga langkah: spasme vaskuler, pembentukan sumbat, dan koagulasi. Spasme vaskuler adalah langkah pertama."],
+ ["Fibrinolisis plasmin",false,"Fibrinolisis plasmin mencegah pembekuan di luar pembuluh yang cedera dan bukan langkah pertama hemostasis."],
+ ["Retraksi bekuan",false,"Retraksi bekuan terjadi setelah bekuan terbentuk, bukan langkah pertama hemostasis."]
+]},
+{t:"Fisiologi Darah dan Limfe",l:"C1-C2",q:"Cairan limfe dari lengan kiri, sisi kiri kepala, dan sebagian toraks mengalir melalui...",o:[
+ ["Duktus limfatikus dekstra",false,"Duktus limfatikus dekstra menerima limfe dari sisi kanan kepala dan leher, lengan kanan, dan sebagian toraks."],
+ ["Duktus toraksikus",true,"Cairan limfe dari bagian bawah tubuh, sisi kiri kepala, lengan kiri, dan sebagian toraks mengalir ke duktus toraksikus."],
+ ["Kelenjar timus",false,"Timus adalah organ limfoid primer untuk maturasi limfosit T, bukan saluran limfe."],
+ ["Limpa",false,"Limpa menyaring darah dan bukan saluran limfe untuk lengan kiri."],
+ ["Pembuluh limfe kulit",false,"Pembuluh limfe kulit bukan jalur utama untuk lengan kiri."]
+]},
+{t:"Fisiologi Darah dan Limfe",l:"C3-C4",q:"Eritrosit dimasukkan ke dalam larutan NaCl 0,2% di laboratorium. Peristiwa yang paling mungkin terjadi adalah...",o:[
+ ["Krenasi, sehingga eritrosit berkerut dan berduri",false,"Krenasi terjadi pada larutan hipertonis, seperti NaCl 4%, bukan pada NaCl 0,2%."],
+ ["Hemolisis, karena air masuk ke dalam eritrosit dan sel pecah",true,"NaCl 0,2% adalah larutan hipotonis. Air masuk ke eritrosit sehingga sel bengkak dan pecah, peristiwa yang disebut hemolisis."],
+ ["Tidak terjadi perubahan karena larutan bersifat isotonis",false,"NaCl 0,9% adalah larutan isotonis. NaCl 0,2% bersifat hipotonis, sehingga menimbulkan perubahan."],
+ ["Eritrosit mengalami eritropoesis baru",false,"Eritropoesis terjadi di sumsum tulang dan tidak dipicu perubahan osmotik pada uji ini."],
+ ["Plasmin dilepaskan dari eritrosit",false,"Plasmin berasal dari sistem fibrinolitik dan tidak dilepaskan eritrosit sebagai respons terhadap NaCl 0,2%."]
+]},
+{t:"Fisiologi Darah dan Limfe",l:"C3-C4",q:"Seorang pasien mengalami hipoalbuminemia berat. Perubahan utama yang paling tepat menyebabkan edema pada pasien ini adalah...",o:[
+ ["Peningkatan tekanan onkotik koloid plasma",false,"Penurunan albumin justru menurunkan tekanan onkotik plasma, sehingga cairan tidak tertarik kembali ke kapiler."],
+ ["Penurunan tekanan onkotik koloid plasma, sehingga cairan bergerak keluar kapiler ke interstisial",true,"Albumin berperan menjaga tekanan osmotik koloid plasma. Penurunan albumin menurunkan tekanan tersebut, sehingga cairan keluar dari kapiler dan menumpuk di interstisial."],
+ ["Penurunan tekanan hidrostatik kapiler",false,"Tekanan hidrostatik kapiler tidak turun akibat hipoalbuminemia."],
+ ["Peningkatan aliran limfe",false,"Aliran limfe membantu mengembalikan cairan, sehingga peningkatannya tidak menjelaskan edema dalam kasus ini."],
+ ["Penurunan permeabilitas kapiler",false,"Permeabilitas kapiler tidak menurun sebagai akibat hipoalbuminemia."]
+]},
+{t:"Fisiologi Darah dan Limfe",l:"C3-C4",q:"Seorang wanita pasca mastektomi mengalami pembengkakan kronis pada lengan. Penyebab utama yang paling tepat adalah...",o:[
+ ["Peningkatan tekanan hidrostatik vena lengan",false,"Peningkatan tekanan vena dapat menyebabkan edema, tetapi pembengkakan pasca mastektomi terjadi karena kegagalan drainase limfe."],
+ ["Kegagalan drainase limfe yang menyebabkan limfedema",true,"Edema terjadi karena kegagalan drainase limfe. Limfedema sering terjadi pada kondisi pasca mastektomi."],
+ ["Kelebihan protein plasma",false,"Kelebihan protein plasma tidak menjadi penyebab pembengkakan pasca mastektomi."],
+ ["Peningkatan aktivitas limpa",false,"Limpa tidak berhubungan dengan drainase lengan pada kondisi pasca mastektomi."],
+ ["Infeksi pembuluh darah vena utama",false,"Infeksi vena utama bukan penyebab utama pembengkakan pasca mastektomi. Kondisi tersebut berbeda dari limfadenitis."]
+]},
+
+{t:"Biokimia Protein Plasma",l:"C1-C2",q:"Protein plasma yang paling banyak, sekitar 60% dari seluruh protein plasma, adalah...",o:[
+ ["Globulin",false,"Globulin sekitar 35% dari protein plasma."],
+ ["Fibrinogen",false,"Fibrinogen sekitar 4% dari protein plasma."],
+ ["Albumin",true,"Albumin sekitar 60% dari protein plasma dan merupakan protein plasma terbanyak."],
+ ["Imunoglobulin",false,"Imunoglobulin adalah bagian dari globulin, bukan protein terbanyak."],
+ ["Transferin",false,"Transferin adalah protein transport besi dan bukan protein plasma terbanyak."]
+]},
+{t:"Biokimia Protein Plasma",l:"C1-C2",q:"Imunoglobulin kelas yang paling banyak dalam serum dan satu-satunya yang dapat melewati plasenta adalah...",o:[
+ ["IgA",false,"IgA adalah antibodi sekretorik pada membran mukosa dan tidak melewati plasenta."],
+ ["IgM",false,"IgM dihasilkan pada respons imun primer dan tidak melewati plasenta."],
+ ["IgE",false,"IgE terlibat pada reaksi hipersensitivitas dan tidak melewati plasenta."],
+ ["IgG",true,"IgG adalah antibodi utama pada respons imun sekunder, kadarnya paling besar, dan dapat melewati plasenta."],
+ ["IgD",false,"IgD belum jelas fungsinya dan tidak diketahui melewati plasenta."]
+]},
+{t:"Biokimia Protein Plasma",l:"C1-C2",q:"Protein plasma yang merupakan reaktan fase akut paling sensitif, meningkat 24–48 jam setelah infeksi atau kerusakan jaringan, adalah...",o:[
+ ["Albumin",false,"Albumin adalah protein negatif fase akut, kadarnya menurun saat inflamasi."],
+ ["Transferin",false,"Transferin adalah protein negatif fase akut."],
+ ["C-reactive protein (CRP)",true,"CRP adalah reaktan fase akut paling sensitif. Kadarnya meningkat 24–48 jam setelah fase akut dan dapat naik hingga sekitar 2000 kali lipat normal."],
+ ["Prealbumin",false,"Prealbumin adalah protein negatif fase akut dan digunakan untuk menilai status nutrisi."],
+ ["Fibronektin",false,"Fibronektin bukan reaktan fase akut yang sensitif seperti CRP."]
+]},
+{t:"Biokimia Protein Plasma",l:"C3-C4",q:"Seorang pasien dengan sindrom nefrotik mengalami albuminuria berat. Kadar albumin serum yang turun pada kondisi ini paling tepat dijelaskan oleh...",o:[
+ ["Peningkatan sintesis albumin di hati",false,"Sintesis albumin di hati memang dapat meningkat bila dibutuhkan, tetapi penurunan albumin pada sindrom nefrotik terjadi karena ekskresi melalui ginjal meningkat."],
+ ["Peningkatan ekskresi albumin melalui ginjal",true,"Sindrom nefrotik menyebabkan hipoalbuminemia karena ekskresi albumin melalui ginjal meningkat."],
+ ["Penurunan katabolisme albumin",false,"Katabolisme albumin yang menurun akan meningkatkan kadarnya, bukan menurunkannya."],
+ ["Peningkatan aliran limfe",false,"Aliran limfe tidak menjadi penyebab hipoalbuminemia pada sindrom nefrotik."],
+ ["Peningkatan kadar transferin",false,"Transferin tidak menjadi penyebab hipoalbuminemia pada sindrom nefrotik."]
+]},
+{t:"Biokimia Protein Plasma",l:"C3-C4",q:"Pasien anemia defisiensi besi diperiksa kadar protein transport besinya. Perubahan yang paling mungkin ditemukan adalah...",o:[
+ ["Transferin meningkat",true,"Transferin meningkat pada defisiensi besi, karena sintesisnya diatur oleh ketersediaan besi."],
+ ["Transferin menurun",false,"Penurunan transferin tidak sesuai dengan defisiensi besi."],
+ ["Ceruloplasmin meningkat",false,"Ceruloplasmin berperan dalam transport tembaga, bukan besi, dan tidak meningkat pada defisiensi besi."],
+ ["Haptoglobin meningkat secara pasti",false,"Haptoglobin meningkat pada fase akut dan hemolisis, bukan penanda utama defisiensi besi."],
+ ["Albumin meningkat",false,"Albumin adalah protein negatif fase akut dan bukan penanda defisiensi besi."]
+]},
+{t:"Biokimia Protein Plasma",l:"C3-C4",q:"Seorang pria muda bukan perokok mengalami emfisema paru yang berat. Pemeriksaan menunjukkan defisiensi protein yang menghambat enzim elastase dan protease di paru. Protein tersebut adalah...",o:[
+ ["Alfa-1-antitripsin (α1-AT)",true,"Alfa-1-antitripsin adalah antiprotease yang menghambat elastase. Defisiensi kongenitalnya menyebabkan emfisema dan sirosis."],
+ ["Alfa-2-makroglobulin",false,"Alfa-2-makroglobulin juga menghambat protease, tetapi defisiensinya tidak dikaitkan dengan emfisema seperti α1-antitripsin."],
+ ["Haptoglobin",false,"Haptoglobin mengikat hemoglobin bebas dan tidak menghambat elastase."],
+ ["Ceruloplasmin",false,"Ceruloplasmin mengikat tembaga dan dikaitkan dengan penyakit Wilson, bukan defisiensi antiprotease paru."],
+ ["Transferin",false,"Transferin berperan dalam transport besi dan tidak menghambat elastase."]
+]}
+];
+const BK6 = [
+{t:"Histologi Sistem Limfatika",l:"C1-C2",q:"Organ limfoid sekunder, tempat sebagian besar respons imun terjadi dan darah disaring, adalah...",o:[
+ ["Timus",false,"Timus adalah organ limfoid primer, tempat sel punca berkembang menjadi limfosit T."],
+ ["Sumsum tulang merah",false,"Sumsum tulang merah adalah organ limfoid primer tempat sel punca membelah dan menjadi imunokompeten."],
+ ["Limpa",true,"Limpa adalah organ limfoid sekunder, bersama kelenjar limfe dan nodulus limfatikus, tempat sebagian besar respons imun terjadi."],
+ ["Medula timus",false,"Medula timus adalah bagian dari timus, yang merupakan organ limfoid primer."],
+ ["Badan Hassall",false,"Badan Hassall adalah struktur di medula timus, bukan organ limfoid sekunder."]
+]},
+{t:"Histologi Sistem Limfatika",l:"C1-C2",q:"Struktur konsentris berisi filamen keratin dan kadang terkalsifikasi di medula timus, yang dibentuk oleh sel retikuler, disebut...",o:[
+ ["Germinal center",false,"Germinal center adalah pusat folikel limfoid pada kelenjar limfe dan tonsil, bukan struktur di medula timus."],
+ ["Sinus subkapsular",false,"Sinus subkapsular adalah ruang di bawah kapsul kelenjar limfe, bukan struktur konsentris di timus."],
+ ["Korpuskel Malpighi",false,"Korpuskel Malpighi adalah struktur ginjal, bukan timus."],
+ ["Badan Hassall (korpuskulum Hassall)",true,"Badan Hassall di medula timus adalah bangunan konsentris dari sel retikuler dengan pusat filamen keratin."],
+ ["Nodulus limfatikus",false,"Nodulus limfatikus adalah agregat limfosit tanpa kapsul, bukan bangunan konsentris dari sel retikuler di medula timus."]
+]},
+{t:"Histologi Sistem Limfatika",l:"C1-C2",q:"Bagian limpa yang terdiri dari korda Billroth dan sinusoid, berisi eritrosit, makrofag, dan sel plasma, disebut...",o:[
+ ["Pulpa putih",false,"Pulpa putih adalah jaringan limfatik di sekitar arteri sentralis, terdiri dari limfosit dan makrofag, bukan korda Billroth dan sinusoid."],
+ ["Pulpa merah",true,"Pulpa merah terdiri dari korda Billroth dan sinusoid yang berisi eritrosit, limfosit, sel plasma, dan makrofag."],
+ ["Trabekula",false,"Trabekula adalah jaringan ikat yang menjorok dari kapsul ke dalam limpa, bukan bagian parenkim."],
+ ["Kapsul limpa",false,"Kapsul limpa adalah jaringan ikat padat yang membungkus limpa, bukan korda dan sinusoid."],
+ ["Germinal center",false,"Germinal center adalah pusat folikel limfoid, bukan korda dan sinusoid pada limpa."]
+]},
+{t:"Histologi Sistem Limfatika",l:"C3-C4",q:"Pada biopsi nodus limfatikus seorang pasien, dominasi limfosit T ditemukan di bagian tertentu. Bagian nodus limfatikus yang paling banyak mengandung limfosit T adalah...",o:[
+ ["Korteks",false,"Korteks mengandung banyak limfosit B dan folikel limfoid."],
+ ["Parakorteks",true,"Korteks mengandung banyak limfosit B, sedangkan parakorteks mengandung banyak limfosit T."],
+ ["Medula",false,"Medula mengandung untaian sel limfatik (medullary cords) dan sinus medularis, bukan area dominan limfosit T."],
+ ["Hilus",false,"Hilus adalah tempat masuk arteri dan saraf serta keluar vena dan limfe, bukan tempat limfosit T dominan."],
+ ["Sinus subkapsular",false,"Sinus subkapsular adalah ruang dekat kapsul pada korteks, bukan area dominan limfosit T."]
+]},
+{t:"Histologi Sistem Limfatika",l:"C3-C4",q:"Peneliti mempelajari patch Peyer di ileum untuk mengetahui sel yang menangkap antigen dari lumen usus. Sel yang paling tepat berperan dalam proses ini adalah...",o:[
+ ["Sel plasma",false,"Sel plasma menghasilkan antibodi dan tidak berperan sebagai sel penangkap antigen dari lumen pada patch Peyer."],
+ ["Sel M",true,"Sel M berperan penting dalam proses imunologis di usus dan mengandung banyak limfosit T, limfosit B, dan sel dendritik pada patch Peyer."],
+ ["Sel Kupffer",false,"Sel Kupffer adalah fagosit di hati, bukan sel penangkap antigen usus pada patch Peyer."],
+ ["Sel Langerhans",false,"Sel Langerhans terdapat di epidermis kulit, bukan di patch Peyer usus."],
+ ["Eritrosit",false,"Eritrosit tidak berperan dalam penangkapan antigen pada patch Peyer."]
+]},
+
+{t:"Anatomi Sistem Limfatika",l:"C1-C2",q:"Duktus limfatikus utama yang berawal dari cisterna chyli, panjangnya 38–45 cm, dan mengalirkan sekitar 75% cairan limfe tubuh adalah...",o:[
+ ["Duktus limfatikus dekstra",false,"Duktus limfatikus dekstra panjangnya sekitar ½ inci dan hanya mengalirkan limfe dari sisi kanan tubuh."],
+ ["Duktus toraksikus",true,"Duktus toraksikus adalah duktus limfatik utama, panjangnya 38–45 cm, berawal dari cisterna chyli, dan mengalirkan sekitar 75% cairan limfe."],
+ ["Cisterna chyli",false,"Cisterna chyli adalah tempat awal duktus toraksikus, bukan duktus itu sendiri."],
+ ["Truncus lymphaticus",false,"Truncus lymphaticus adalah percabangan pembuluh limfe yang lebih kecil dari duktus utama."],
+ ["Vena subklavia",false,"Vena subklavia adalah pembuluh darah tempat limfe bermuara, bukan duktus limfatik."]
+]},
+{t:"Anatomi Sistem Limfatika",l:"C1-C2",q:"Kapiler limfatik khusus di usus halus yang mengangkut kilomikron (lipid) disebut...",o:[
+ ["Kapiler limfatik kulit",false,"Kapiler limfatik kulit mengikuti vena kutaneus dan tidak khusus mengangkut lipid dari usus."],
+ ["Lacteal",true,"Lacteal adalah kapiler limfe khusus di usus halus yang mengumpulkan lipid (kilomikron). Limfenya tampak seperti susu dan disebut chyle."],
+ ["Sinusoid limpa",false,"Sinusoid limpa adalah kapiler darah di pulpa merah limpa, bukan kapiler limfatik di usus."],
+ ["Sinus medularis",false,"Sinus medularis adalah ruang di medula nodus limfatikus, bukan kapiler usus."],
+ ["Venula endotel tinggi (HEV)",false,"HEV adalah venula tempat limfosit masuk ke nodus limfatikus, bukan kapiler lacteal."]
+]},
+{t:"Anatomi Sistem Limfatika",l:"C1-C2",q:"Limpa terletak di...",o:[
+ ["Kuadran kanan bawah abdomen, di atas ginjal kanan",false,"Limpa terletak di kuadran kiri atas abdomen, bukan kanan bawah."],
+ ["Kuadran kiri atas abdomen, di inferior diafragma, memanjang dari iga 9–11",true,"Limpa terletak di kuadran kiri atas abdomen, di inferior diafragma, dan memanjang dari iga 9 sampai 11."],
+ ["Mediastinum anterior, di antara sternum dan jantung",false,"Lokasi tersebut adalah timus, organ limfoid primer, bukan limpa."],
+ ["Dasar pelvis, di sisi kanan rektum",false,"Lokasi tersebut tidak sesuai dengan posisi limpa."],
+ ["Leher kanan, dekat kelenjar tiroid",false,"Lokasi tersebut tidak sesuai dengan posisi limpa."]
+]},
+{t:"Anatomi Sistem Limfatika",l:"C3-C4",q:"Seorang pasien mengalami cedera pada lengan kanan dan kepala kanan. Cairan limfe dari bagian tubuh tersebut akan mengalir ke pembuluh berikut dan bermuara di...",o:[
+ ["Duktus toraksikus, bermuara di vena jugularis interna dan vena subklavia sinistra",false,"Duktus toraksikus menerima limfe dari sisi kiri kepala dan lengan kiri, bukan sisi kanan."],
+ ["Duktus limfatikus dekstra, bermuara di pertemuan vena jugularis interna dekstra dan vena subklavia dekstra",true,"Duktus limfatikus dekstra menerima limfe dari kanan kepala dan leher, lengan kanan, dan sebagian toraks, lalu bermuara di pertemuan vena jugularis interna dekstra dan vena subklavia dekstra."],
+ ["Cisterna chyli di lumbal II",false,"Cisterna chyli adalah awal duktus toraksikus, bukan muara limfe dari lengan kanan."],
+ ["Limpa, yang mengembalikan cairan ke vena cava",false,"Limpa menyaring darah dan bukan saluran pengembalian limfe dari lengan kanan."],
+ ["Timus, yang mengalirkan limfe ke jantung",false,"Timus adalah organ limfoid primer dan tidak berfungsi sebagai saluran limfe."]
+]},
+{t:"Anatomi Sistem Limfatika",l:"C3-C4",q:"Seorang pria 45 tahun harus berbaring total selama beberapa minggu dan mengalami pembengkakan pada kaki. Aliran limfe normal bergantung pada pompa ekstrinsik, yaitu kontraksi otot yang memeras limfe melalui katup, karena limfe tidak memiliki jantung limfe. Penjelasan yang paling tepat adalah...",o:[
+ ["Tubuh tidak bergerak, sehingga pompa ekstrinsik berkurang dan limfe kembali menumpuk di interstisial",true,"Limfe tidak memiliki jantung limfe. Aliran limfe bergantung pada kontraksi otot yang memeras pembuluh limfe melalui katup. Tanpa gerak, aliran berkurang dan cairan menumpuk."],
+ ["Terjadi peningkatan pompa intrinsik di pembuluh limfe besar, yang menyebabkan pembengkakan",false,"Peningkatan pompa intrinsik tidak menjelaskan pembengkakan akibat tidak bergerak. Pompa intrinsik adalah kontraksi otot polos pada pembuluh limfe awal."],
+ ["Limpa membesar sehingga menekan pembuluh limfe kaki",false,"Limpa terletak di kuadran kiri atas abdomen, sehingga tidak menjelaskan pembengkakan kaki pada kasus ini."],
+ ["Duktus toraksikus menutup total sehingga limfe tidak mengalir ke vena",false,"Penutupan total duktus toraksikus bukan penyebab kasus ini."],
+ ["Kapiler limfatik menjadi lebih permeabel sehingga limfe keluar ke kulit",false,"Peningkatan permeabilitas kapiler limfatik bukan penyebab kondisi ini."]
+]},
+{t:"Anatomi Sistem Limfatika",l:"C3-C4",q:"Penduduk di daerah endemis dengan infeksi cacing filaria mengalami pembengkakan kronis dan tebal pada tungkai, yang disebut elefantiasis. Mekanisme utama kondisi ini adalah...",o:[
+ ["Peningkatan produksi sel darah merah di sumsum tulang",false,"Peningkatan produksi eritrosit tidak menjelaskan pembengkakan tungkai pada elefantiasis."],
+ ["Penyumbatan pembuluh limfe oleh cacing filaria sehingga drainase limfe gagal",true,"Elefantiasis terjadi karena penyumbatan pembuluh limfe oleh cacing filaria, yang menyebabkan kegagalan drainase limfe."],
+ ["Infeksi pada timus sehingga produksi limfosit T berkurang",false,"Timus bukan sumber masalah pada elefantiasis."],
+ ["Kanker yang menyebar ke nodus limfatikus",false,"Metastasis kanker ke nodus limfatikus adalah kondisi yang berbeda dari elefantiasis."],
+ ["Penurunan kadar albumin plasma",false,"Penurunan albumin dapat menyebabkan edema, tetapi elefantiasis disebabkan penyumbatan pembuluh limfe oleh cacing."]
+]}
+];
+
+/* ===== LOGIKA KUIS ===== */
+const BANK = [].concat(BK0, BK1, BK2, BK3, BK4, BK5, BK6);
+const N = BANK.length;
+const MENIT = Math.max(1, Math.round(130 * N / 100));
+let qs = [], ans = [], idx = 0, sisa = 0, timerId = null;
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function fmt(s){
+  const m=Math.floor(s/60), d=s%60;
+  return String(m).padStart(2,"0")+":"+String(d).padStart(2,"0");
+}
+const HURUF=["A","B","C","D","E"];
+
+const nC12 = BANK.filter(q=>q.l==="C1-C2").length;
+document.getElementById("nSoal").textContent = N;
+document.getElementById("nC12").textContent = nC12;
+document.getElementById("nC34").textContent = N - nC12;
+document.getElementById("nWaktu").textContent = MENIT;
+
+function mulai(){
+  qs = shuffle(BANK.map(q=>({
+    t:q.t, l:q.l, q:q.q,
+    o: shuffle(q.o.map(x=>({t:x[0],ok:x[1],why:x[2]})))
+  })));
+  ans = new Array(N).fill(-1);
+  idx = 0;
+  sisa = MENIT*60;
+  document.getElementById("start").classList.add("hid");
+  document.getElementById("result").classList.add("hid");
+  document.getElementById("quiz").classList.remove("hid");
+  render();
+  clearInterval(timerId);
+  document.getElementById("timer").textContent = fmt(sisa);
+  timerId = setInterval(()=>{
+    sisa--;
+    document.getElementById("timer").textContent = fmt(sisa);
+    if(sisa<=0){ clearInterval(timerId); selesai(true); }
+  },1000);
+  window.scrollTo(0,0);
+}
+
+/* Pilih jawaban: langsung dikunci dan tampilkan kunci + pembahasan */
+function pilih(i){
+  if(ans[idx]>=0) return;
+  ans[idx]=i;
+  render();
+}
+
+function render(){
+  const q = qs[idx];
+  const sudah = ans[idx]>=0;
+  document.getElementById("progress").textContent = "Soal " + (idx+1) + " dari " + N;
+  document.getElementById("qmeta").innerHTML =
+    '<span class="badge">'+q.l+'</span><span class="badge">'+q.t+'</span>';
+  document.getElementById("qtext").textContent = q.q;
+
+  const box = document.getElementById("opts");
+  box.innerHTML = "";
+  q.o.forEach((o,i)=>{
+    const b = document.createElement("button");
+    let cls = "opt";
+    if(sudah){
+      if(o.ok) cls += " ok";
+      else if(i===ans[idx]) cls += " bad";
+    } else if(ans[idx]===i) cls += " sel";
+    b.className = cls;
+    b.textContent = HURUF[i]+".  "+o.t + (sudah && o.ok ? "  \u2713" : "");
+    b.disabled = sudah;
+    b.onclick = ()=>pilih(i);
+    box.appendChild(b);
+  });
+
+  if(sudah){
+    const u = ans[idx];
+    const benarPilihan = q.o[u].ok;
+    const kunciIdx = q.o.findIndex(o=>o.ok);
+    const fb = document.createElement("div");
+    fb.style.marginTop = "12px";
+    fb.innerHTML =
+      '<p style="margin:6px 0"><b style="color:'+(benarPilihan?'var(--ok)':'var(--bad)')+'">'+
+      (benarPilihan?'Jawaban Anda benar.':'Jawaban Anda salah.')+'</b> '+
+      'Kunci jawaban: <b>'+HURUF[kunciIdx]+'</b>.</p>';
+    q.o.forEach((o,j)=>{
+      const d = document.createElement("div");
+      d.className = "exp";
+      d.innerHTML = '<b>'+HURUF[j]+'.</b> '+(o.ok?'<b>(Benar)</b> ':'<b>(Salah)</b> ')+o.why;
+      fb.appendChild(d);
+    });
+    box.appendChild(fb);
+  }
+
+  document.getElementById("btnPrev").disabled = idx===0;
+  document.getElementById("btnNext").disabled = idx===N-1;
+
+  const nav = document.getElementById("nav");
+  nav.innerHTML = "";
+  for(let i=0;i<N;i++){
+    const b = document.createElement("button");
+    b.textContent = i+1;
+    let c = "";
+    if(ans[i]>=0) c = qs[i].o[ans[i]].ok ? "right " : "wrong ";
+    b.className = c + (i===idx?"cur":"");
+    b.onclick = ()=>{ idx=i; render(); };
+    nav.appendChild(b);
+  }
+}
+
+document.getElementById("btnPrev").onclick = ()=>{ if(idx>0){idx--;render();} };
+document.getElementById("btnNext").onclick = ()=>{ if(idx<N-1){idx++;render();} };
+document.getElementById("btnSubmit").onclick = ()=>{
+  const belum = ans.filter(a=>a<0).length;
+  if(belum===0){ selesai(false); return; }
+  let box = document.getElementById("konfirm");
+  if(!box){
+    box = document.createElement("div");
+    box.id = "konfirm";
+    box.className = "card";
+    document.getElementById("nav").parentElement.after(box);
+  }
+  box.innerHTML =
+    '<p><b>Masih ada '+belum+' soal belum dijawab.</b> Anda tetap bisa menyelesaikan ujian sekarang, soal yang kosong dihitung salah.</p>'+
+    '<div class="row"><button class="sec" id="btnBatal">Lanjut mengerjakan</button><button id="btnYa">Ya, selesai sekarang</button></div>';
+  document.getElementById("btnBatal").onclick = ()=>{ box.remove(); };
+  document.getElementById("btnYa").onclick = ()=>selesai(false);
+  box.scrollIntoView({behavior:"smooth", block:"center"});
+};
+document.getElementById("btnStart").onclick = mulai;
+
+function selesai(habisWaktu){
+  clearInterval(timerId);
+  document.getElementById("quiz").classList.add("hid");
+  const res = document.getElementById("result");
+  res.classList.remove("hid");
+
+  let benar=0;
+  const perLevel={"C1-C2":[0,0],"C3-C4":[0,0]};
+  const perTopik={};
+  qs.forEach((q,i)=>{
+    const ok = ans[i]>=0 && q.o[ans[i]].ok;
+    if(ok) benar++;
+    perLevel[q.l][1]++; if(ok) perLevel[q.l][0]++;
+    perTopik[q.t] = perTopik[q.t] || [0,0];
+    perTopik[q.t][1]++; if(ok) perTopik[q.t][0]++;
+  });
+  const skor = Math.round(benar/N*100);
+
+  let html = '<div class="card"><h1>Hasil Ujian</h1>';
+  if(habisWaktu) html += '<p><b>Waktu habis.</b> Jawaban otomatis dikumpulkan.</p>';
+  html += '<p style="font-size:28px;margin:6px 0"><b>'+skor+'</b> / 100 &nbsp;<span class="meta">('+benar+' benar dari '+N+' soal)</span></p>';
+  html += '<ul class="plain">';
+  for(const k in perLevel){
+    const [a,b]=perLevel[k];
+    html += '<li>'+k+': '+a+' / '+b+' benar</li>';
+  }
+  html += '</ul><p class="meta"><b>Per topik:</b></p><ul class="plain">';
+  for(const k in perTopik){
+    const [a,b]=perTopik[k];
+    html += '<li>'+k+': '+a+' / '+b+'</li>';
+  }
+  html += '</ul><div class="row"><span></span><button id="btnUlang">Ulangi (soal diacak ulang)</button></div></div>';
+
+  qs.forEach((q,i)=>{
+    const u = ans[i];
+    html += '<div class="card"><div class="meta">Soal '+(i+1)+' &middot; '+q.l+' &middot; '+q.t+'</div>';
+    html += '<h2>'+q.q+'</h2>';
+    html += '<p class="meta">Jawaban Anda: '+(u<0?'(tidak dijawab)':HURUF[u]+'. '+q.o[u].t+(q.o[u].ok?' &#10003;':' &#10007;'))+'</p>';
+    q.o.forEach((o,j)=>{
+      const cls = o.ok ? "ok" : (j===u ? "bad" : "");
+      html += '<div class="opt '+cls+'" style="cursor:default"><b>'+HURUF[j]+'.</b> '+o.t+(o.ok?' <b>(Kunci)</b>':'')+'</div>';
+      html += '<div class="exp">'+o.why+'</div>';
+    });
+    html += '</div>';
+  });
+  res.innerHTML = html;
+  document.getElementById("btnUlang").onclick = mulai;
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
